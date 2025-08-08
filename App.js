@@ -26,6 +26,11 @@ import AddVaccineScreen from './src/features/vaccines/screens/AddVaccineScreen';
 import EditVaccineScreen from './src/features/vaccines/screens/EditVaccineScreen';
 import VaccineHistoryScreen from './src/features/vaccines/screens/VaccineHistoryScreen';
 
+import CEMListScren from './src/features/cem/screens/CEMListScreen';
+import ViewCEMMedicationsScreen from './src/features/cem/screens/ViewCEMMedicationsScreen';
+import AddCEMMedicationScreen from './src/features/cem/screens/AddCEMMedicationScreen';
+import EditCEMMedicationScreen from './src/features/cem/screens/EditCEMMedicationScreen';
+
 // Componente customizado de navegação lateral
 import CustomDrawerContent from './src/components/navigation/CustomDrawerContent';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -39,23 +44,23 @@ const Drawer = createDrawerNavigator();
 function HomeDrawer() {
   return (
     <Drawer.Navigator
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
-        screenOptions={{
-          headerShown: false,
-          drawerStyle: {
-            backgroundColor: '#ffffff',
-          },
-          drawerActiveTintColor: '#2e7d32',
-        }}
-      >
-        {/* rotas */}
-        <Drawer.Screen name="Início" component={HomeScreen} />
-        <Drawer.Screen name="Perfil" component={UserProfileScreen} />
-        <Drawer.Screen name="Troca de Senha" component={ChangePasswordScreen} />
-        <Drawer.Screen name="Tipo Sanguíneo" component={BloodTypeScreen} />
-        <Drawer.Screen name="Notificações" component={NotificationScreen} />
-        <Drawer.Screen name="Vacinas" component={VaccineHistoryScreen} />
-        <Stack.Screen name="Cuidadores" component={CaregiverListScreen} />
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      screenOptions={{
+        headerShown: false,
+        drawerStyle: {
+          backgroundColor: '#ffffff',
+        },
+        drawerActiveTintColor: '#2e7d32',
+      }}
+    >
+      {/* rotas */}
+      <Drawer.Screen name="Início" component={HomeScreen} />
+      <Drawer.Screen name="Perfil" component={UserProfileScreen} />
+      <Drawer.Screen name="Troca de Senha" component={ChangePasswordScreen} />
+      <Drawer.Screen name="Tipo Sanguíneo" component={BloodTypeScreen} />
+      <Drawer.Screen name="Notificações" component={NotificationScreen} />
+      <Drawer.Screen name="Vacinas" component={VaccineHistoryScreen} />
+      <Stack.Screen name="Cuidadores" component={CaregiverListScreen} />
     </Drawer.Navigator>
   );
 }
@@ -67,25 +72,33 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-          <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash">
-            <Stack.Screen name="Splash" component={SplashScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-            <Stack.Screen name="ValidateCode" component={ValidateCodeScreen} />
-            <Stack.Screen name="GoogleRegister" component={GoogleRegisterScreen} />
-            <Stack.Screen name="FacebookRegister" component={FacebookRegisterScreen} />
-            <Stack.Screen name="Register" component={PatientRegisterScreen} />
-            <Stack.Screen name="Home" component={HomeDrawer} />
-            <Stack.Screen name="Adicionar Vacina" component={AddVaccineScreen} />
-            <Stack.Screen name="Editar Vacina" component={EditVaccineScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen name="Tratamentos" component={TreatmentListScreen} />
-            <Stack.Screen name="Consultas" component={ConsultationListScreen} />
-            <Stack.Screen name="Exames" component={ExamListScreen} />
-            <Stack.Screen name="Medicamentos" component={MedicationListScreen} />
-          </Stack.Navigator>
+        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash">
+          <Stack.Screen name="Splash" component={SplashScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ValidateCode" component={ValidateCodeScreen} />
+          <Stack.Screen name="GoogleRegister" component={GoogleRegisterScreen} />
+          <Stack.Screen name="FacebookRegister" component={FacebookRegisterScreen} />
+          <Stack.Screen name="Register" component={PatientRegisterScreen} />
+          <Stack.Screen name="Home" component={HomeDrawer} />
+          <Stack.Screen name="Adicionar Vacina" component={AddVaccineScreen} />
+          <Stack.Screen name="Editar Vacina" component={EditVaccineScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen name="Tratamentos" component={TreatmentListScreen} />
+          <Stack.Screen name="Consultas" component={ConsultationListScreen} />
+          <Stack.Screen name="Exames" component={ExamListScreen} />
+          <Stack.Screen name="Medicamentos" component={MedicationListScreen} />
+          <Stack.Screen name="CEM" component={CEMListScren} />
+          <Stack.Screen
+            name="Visualizar Medicamentos CEM"
+            component={ViewCEMMedicationsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen name="Adicionar Medicamento CEM" component={AddCEMMedicationScreen} />
+          <Stack.Screen name="Editar Medicamento CEM" component={EditCEMMedicationScreen} />
+        </Stack.Navigator>
       </NavigationContainer>
-    </SafeAreaProvider>    
+    </SafeAreaProvider>
   );
 }

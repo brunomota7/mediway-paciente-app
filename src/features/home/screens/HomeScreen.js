@@ -136,10 +136,13 @@ export default function HomeScreen({ navigation }) {
             <Image source={require('../../../../assets/icon-tratamento.png')} style={styles.cardIcon} />
             <Text style={styles.cardText}>Tratamento</Text>
           </TouchableOpacity>
-          <View style={styles.dashboardCard}>
+          <TouchableOpacity 
+            style={styles.dashboardCard}
+            onPress={() => navigation.navigate('CEM')}
+          >
             <Image source={require('../../../../assets/icon-cem.png')} style={styles.cardIcon} />
             <Text style={styles.cardText}>CEM</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.dashboardContainer}>

@@ -44,8 +44,10 @@ export default StyleSheet.create({
     marginBottom: 10,
   },
   buttonText: {
+    minWidth: '40%',
     color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   link: {
     color: '#1b5e20',
