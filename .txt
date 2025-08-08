@@ -1,0 +1,6 @@
+          {/* <Pressable onPress={() => handleTabPress('Consultas')}>
+            <Image
+              source={require('../../../../assets/icon-consultas.png')}
+              style={[styles.tabIcon, activeTab === 'Consultas' && styles.activeTabIcon]}
+            />
+          </Pressable> */}
