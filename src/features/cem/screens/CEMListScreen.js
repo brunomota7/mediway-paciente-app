@@ -5,6 +5,7 @@ import { useState } from 'react';
 import {
   Alert,
   FlatList,
+  SafeAreaView,
   Text,
   TouchableOpacity,
   View
@@ -19,7 +20,7 @@ import AddCEMModal from './AddCEMModal';
 export default function CEMListScreen({ navigation }) {
 
   const [modalVisible, setModalVisible] = useState(false);
-  
+
   // Lista simulada de CEMs associadas
   const [cemList, setCemList] = useState([
     { Serie: 'CEM-903A1D72', pacientes: 2 },
@@ -63,8 +64,8 @@ export default function CEMListScreen({ navigation }) {
           style={styles.visualizarBtn}
           onPress={() =>
             navigation.navigate('Visualizar Medicamentos CEM', {
-                serie: item.Serie,
-                pacientes: item.pacientes,
+              serie: item.Serie,
+              pacientes: item.pacientes,
             })
           }
         >
@@ -91,43 +92,45 @@ export default function CEMListScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
-      {/* Cabeçalho */}
-      <View style={styles.header}>
-        <MaterialCommunityIcons name="chip" size={28} color="#4caf50" />
-        <Text style={styles.title}>Caixa Eletrônica de Medicamento (CEM)</Text>
-        <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Cabeçalho */}
+        <View style={styles.header}>
+          <MaterialCommunityIcons name="chip" size={28} color="#4caf50" />
+          <Text style={styles.title}>Caixa Eletrônica de Medicamento (CEM)</Text>
+          <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+        </View>
+
+        {/* Lista de CEMs */}
+        <FlatList
+          data={cemList}
+          keyExtractor={(item) => item.Serie}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>Nenhuma CEM associada.</Text>
+          }
+        />
+
+        {/* Botão: Adicionar nova CEM */}
+        <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+          <MaterialCommunityIcons name="wifi" size={20} color="#fff" />
+          <Text style={styles.addButtonText}>Adicionar CEM</Text>
+        </TouchableOpacity>
+
+        {/* Botão: Voltar */}
+        <TouchableOpacity style={styles.exitButton} onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons name="exit-to-app" size={20} color="#388e3c" />
+          <Text style={styles.exitButtonText}>Voltar</Text>
+        </TouchableOpacity>
+
+        {/* Modal: Adicionar nova CEM */}
+        <AddCEMModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onAdd={adicionarCEM}
+        />
       </View>
-
-      {/* Lista de CEMs */}
-      <FlatList
-        data={cemList}
-        keyExtractor={(item) => item.Serie}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>Nenhuma CEM associada.</Text>
-        }
-      />
-
-      {/* Botão: Adicionar nova CEM */}
-      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-        <MaterialCommunityIcons name="wifi" size={20} color="#fff" />
-        <Text style={styles.addButtonText}>Adicionar CEM</Text>
-      </TouchableOpacity>
-
-      {/* Botão: Voltar */}
-      <TouchableOpacity style={styles.exitButton} onPress={() => navigation.goBack()}>
-        <MaterialCommunityIcons name="exit-to-app" size={20} color="#388e3c" />
-        <Text style={styles.exitButtonText}>Voltar</Text>
-      </TouchableOpacity>
-
-      {/* Modal: Adicionar nova CEM */}
-      <AddCEMModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onAdd={adicionarCEM}
-      />
-    </View>
+    </SafeAreaView>
   );
 }

@@ -3,9 +3,13 @@
 import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#ffffff',
+  },
+
+  container: {
+    flex: 1,
     paddingHorizontal: 16,
     paddingTop: 24,
   },

@@ -3,6 +3,11 @@
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+
   container: {
     padding: 20,
     backgroundColor: '#fff',
@@ -10,23 +15,22 @@ export default StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
+    paddingVertical: 10,
+    flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'center',
   },
 
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#4caf50',
-    marginLeft: 10,
   },
 
   subtitle: {
     fontSize: 16,
     color: '#555',
-    marginBottom: 20,
-    marginLeft: 34,
+    marginTop: 12,
   },
 
   sectionHeader: {
@@ -77,16 +81,22 @@ export default StyleSheet.create({
   },
 
   backButton: {
-    marginTop: 20,
+    minWidth: '90%',
+    height: 40,
+    bottom: 8,
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#388e3c',
   },
 
   backButtonText: {
     color: '#388e3c',
     fontSize: 16,
     marginLeft: 6,
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
 });
