@@ -1,9 +1,13 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+
   container: {
     padding: 20,
-    backgroundColor: '#ffffff',
     flexGrow: 1,
   },
 
@@ -49,6 +53,30 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
     textAlignVertical: 'top',
+  },
+
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#c8e6c9',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    overflow: 'hidden',
+  },
+
+  picker: {
+    /*     height: 100, */
+    color: '#333',
+    ...Platform.select({
+      ios: {},
+      android: {
+        textAling: 'center',
+        textAlignVertical: 'center',
+      },
+    }),
+  },
+
+  pickerItem: {
+    color: '#333',
   },
 
   // 🔹 Data

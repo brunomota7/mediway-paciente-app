@@ -1,16 +1,17 @@
 // 📁 src/features/consultations/screens/EditConsultationModal.js
- 
+
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useEffect, useState } from 'react';
 import {
-    Modal,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import styles from '../styles/AddConsultationModalStyles'; // reutiliza o estilo da modal de adição
 
@@ -80,107 +81,117 @@ export default function EditConsultationModal({ visible, onClose, onSave, consul
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Cabeçalho */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <MaterialCommunityIcons name="calendar-edit" size={24} color="#4caf50" />
-            <Text style={styles.title}>Editar Consulta</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
+          {/* Cabeçalho */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <MaterialCommunityIcons name="calendar-edit" size={24} color="#4caf50" />
+              <Text style={styles.title}>Editar Consulta</Text>
+            </View>
+            <TouchableOpacity onPress={onClose}>
+              <MaterialCommunityIcons name="close" size={24} color="#555" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={onClose}>
-            <MaterialCommunityIcons name="close" size={24} color="#555" />
+
+          <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+
+          {/* Campos de edição */}
+          <Text style={styles.label}>Nome</Text>
+          <TextInput
+            style={styles.input}
+            value={Nome}
+            onChangeText={setNome}
+          />
+
+          <Text style={styles.label}>Médico Requisitante</Text>
+          <View style={styles.pickerContainer}>
+            <Picker 
+              selectedValue={fkId10} 
+              onValueChange={setFkId10}
+              itemStyle={styles.pickerItem}
+            >
+              <Picker.Item label="Selecione um médico..." value="" />
+              {medicos.map(m => (
+                <Picker.Item key={m.id} label={m.nome} value={m.id} />
+              ))}
+            </Picker>
+          </View>
+
+          <Text style={styles.label}>Data Requisição</Text>
+          <TouchableOpacity style={styles.dateField} onPress={() => setShowDataRequisicao(true)}>
+            <MaterialCommunityIcons name="calendar" size={20} color="#4caf50" />
+            <Text style={styles.dateText}>{DataRequisicao.toLocaleDateString('pt-BR')}</Text>
           </TouchableOpacity>
-        </View>
+          {showDataRequisicao && (
+            <DateTimePicker
+              value={DataRequisicao}
+              mode="date"
+              display="default"
+              onChange={(_, date) => {
+                setShowDataRequisicao(false);
+                if (date) setDataRequisicao(date);
+              }}
+            />
+          )}
 
-        <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+          <Text style={styles.label}>Data e Hora da Consulta</Text>
+          <TouchableOpacity style={styles.dateField} onPress={() => setShowDataConsulta(true)}>
+            <MaterialCommunityIcons name="calendar-clock" size={20} color="#4caf50" />
+            <Text style={styles.dateText}>{DataConsulta.toLocaleString('pt-BR')}</Text>
+          </TouchableOpacity>
+          {showDataConsulta && (
+            <DateTimePicker
+              value={DataConsulta}
+              mode="datetime"
+              display="default"
+              onChange={(_, date) => {
+                setShowDataConsulta(false);
+                if (date) setDataConsulta(date);
+              }}
+            />
+          )}
 
-        {/* Campos de edição */}
-        <Text style={styles.label}>Nome</Text>
-        <TextInput
-          style={styles.input}
-          value={Nome}
-          onChangeText={setNome}
-        />
-
-        <Text style={styles.label}>Médico Requisitante</Text>
-        <View style={styles.input}>
-          <Picker selectedValue={fkId10} onValueChange={setFkId10}>
-            <Picker.Item label="Selecione um médico..." value="" />
-            {medicos.map(m => (
-              <Picker.Item key={m.id} label={m.nome} value={m.id} />
-            ))}
-          </Picker>
-        </View>
-
-        <Text style={styles.label}>Data Requisição</Text>
-        <TouchableOpacity style={styles.dateField} onPress={() => setShowDataRequisicao(true)}>
-          <MaterialCommunityIcons name="calendar" size={20} color="#4caf50" />
-          <Text style={styles.dateText}>{DataRequisicao.toLocaleDateString('pt-BR')}</Text>
-        </TouchableOpacity>
-        {showDataRequisicao && (
-          <DateTimePicker
-            value={DataRequisicao}
-            mode="date"
-            display="default"
-            onChange={(_, date) => {
-              setShowDataRequisicao(false);
-              if (date) setDataRequisicao(date);
-            }}
+          <Text style={styles.label}>Local</Text>
+          <TextInput
+            style={styles.input}
+            value={Local}
+            onChangeText={setLocal}
           />
-        )}
 
-        <Text style={styles.label}>Data e Hora da Consulta</Text>
-        <TouchableOpacity style={styles.dateField} onPress={() => setShowDataConsulta(true)}>
-          <MaterialCommunityIcons name="calendar-clock" size={20} color="#4caf50" />
-          <Text style={styles.dateText}>{DataConsulta.toLocaleString('pt-BR')}</Text>
-        </TouchableOpacity>
-        {showDataConsulta && (
-          <DateTimePicker
-            value={DataConsulta}
-            mode="datetime"
-            display="default"
-            onChange={(_, date) => {
-              setShowDataConsulta(false);
-              if (date) setDataConsulta(date);
-            }}
+          <Text style={styles.label}>Requisito</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={Requisito}
+            onChangeText={setRequisito}
+            multiline
           />
-        )}
 
-        <Text style={styles.label}>Local</Text>
-        <TextInput
-          style={styles.input}
-          value={Local}
-          onChangeText={setLocal}
-        />
+          <Text style={styles.label}>Acompanhante</Text>
+          <View style={styles.pickerContainer}>
+            <Picker 
+              selectedValue={fkId16} 
+              onValueChange={setFkId16}
+              itemStyle={styles.pickerItem}
+            >
+              {acompanhantes.map(a => (
+                <Picker.Item key={a.id} label={a.nome} value={a.id} />
+              ))}
+            </Picker>
+          </View>
 
-        <Text style={styles.label}>Requisito</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={Requisito}
-          onChangeText={setRequisito}
-          multiline
-        />
+          {/* Botões */}
+          <TouchableOpacity style={styles.saveButton} onPress={handleSalvar}>
+            <MaterialCommunityIcons name="content-save" size={20} color="#fff" />
+            <Text style={styles.saveButtonText}>Salvar</Text>
+          </TouchableOpacity>
 
-        <Text style={styles.label}>Acompanhante</Text>
-        <View style={styles.input}>
-          <Picker selectedValue={fkId16} onValueChange={setFkId16}>
-            {acompanhantes.map(a => (
-              <Picker.Item key={a.id} label={a.nome} value={a.id} />
-            ))}
-          </Picker>
-        </View>
-
-        {/* Botões */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSalvar}>
-          <MaterialCommunityIcons name="content-save" size={20} color="#fff" />
-          <Text style={styles.saveButtonText}>Salvar</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
-          <Text style={styles.cancelButtonText}>Voltar para Lista de Consultas</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+            <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
+            <Text style={styles.cancelButtonText}>Voltar para Lista de Consultas</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
     </Modal>
   );
 }

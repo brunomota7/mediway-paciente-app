@@ -13,7 +13,6 @@ const statusBadge = (color) => ({
 
 const styles = StyleSheet.create({
   tabContainer: {
-    backgroundColor: '#e8f5e9',
     borderBottomWidth: 1,
     borderColor: '#c8e6c9',
     paddingVertical: 4,

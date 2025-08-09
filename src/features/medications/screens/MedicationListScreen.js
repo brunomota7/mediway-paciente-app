@@ -3,7 +3,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TabView } from '@rneui/themed';
 import { useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native'; // ⬅️ Adicionado SafeAreaView
 import MedicationTabs from '../components/MedicationTabs';
 import styles from '../styles/MedicationListScreenStyles';
 import AddMedicationModal from './AddMedicationModal';
@@ -134,7 +134,7 @@ export default function MedicationListScreen({ navigation }) {
       Estoque: 10,
       Situacao: 2,
       DataSuspensao: '2025-07-01',
-    }
+    },
   ]);
 
   // Salvar novo medicamento
@@ -154,59 +154,60 @@ export default function MedicationListScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Cabeçalho */}
-      <View style={styles.header}>
-        <View style={styles.titleView}>
-          <MaterialCommunityIcons name="pill" size={24} color="#4caf50" />
-          <Text style={styles.title}>Medicamentos</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Cabeçalho */}
+        <View style={styles.header}>
+          <View style={styles.titleView}>
+            <MaterialCommunityIcons name="pill" size={24} color="#4caf50" />
+            <Text style={styles.title}>Medicamentos</Text>
+          </View>
+          <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
         </View>
-        <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
-      </View>
 
-      {/* Abas + Lista (rolável apenas essa parte) */}
-      <View style={styles.contentContainer}>
-        <MedicationTabs
-          medicamentos={medications}
-          onEdit={(m) => {
-            setSelectedMedication(m);
-            setEditModalVisible(true);
-          }}
+        {/* Abas + Lista (rolável apenas essa parte) */}
+        <View style={styles.contentContainer}>
+          <MedicationTabs
+            medicamentos={medications}
+            onEdit={(m) => {
+              setSelectedMedication(m);
+              setEditModalVisible(true);
+            }}
+          />
+        </View>
+
+        {/* Botões inferiores (fixos) */}
+        <View style={styles.areaBtnInferiores}>
+          <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+            <MaterialCommunityIcons name="plus-circle-outline" size={20} color="#fff" />
+            <Text style={styles.addButtonText}>Adicionar Novo Medicamento</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.exitButton} onPress={() => navigation.goBack()}>
+            <MaterialCommunityIcons name="exit-to-app" size={20} color="#388e3c" />
+            <Text style={styles.exitButtonText}>Sair</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Modais */}
+        <AddMedicationModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onSave={handleSaveMedication}
         />
+
+        {selectedMedication && (
+          <EditMedicationModal
+            visible={editModalVisible}
+            onClose={() => {
+              setEditModalVisible(false);
+              setSelectedMedication(null);
+            }}
+            onSave={handleEditMedication}
+            medicamento={selectedMedication}
+          />
+        )}
       </View>
-
-      {/* Botões inferiores (fixos) */}
-      <View style={styles.areaBtnInferiores}>
-        <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-          <MaterialCommunityIcons name="plus-circle-outline" size={20} color="#fff" />
-          <Text style={styles.addButtonText}>Adicionar Novo Medicamento</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.exitButton} onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons name="exit-to-app" size={20} color="#388e3c" />
-          <Text style={styles.exitButtonText}>Sair</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Modais */}
-      <AddMedicationModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSave={handleSaveMedication}
-      />
-
-      {selectedMedication && (
-        <EditMedicationModal
-          visible={editModalVisible}
-          onClose={() => {
-            setEditModalVisible(false);
-            setSelectedMedication(null);
-          }}
-          onSave={handleEditMedication}
-          medicamento={selectedMedication}
-        />
-      )}
-    </View>
-
+    </SafeAreaView>
   );
 }

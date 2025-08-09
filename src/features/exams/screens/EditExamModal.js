@@ -6,6 +6,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useEffect, useState } from 'react';
 import {
   Modal,
+  SafeAreaView,
   ScrollView,
   Text,
   TextInput,
@@ -42,7 +43,6 @@ export default function EditExamModal({ visible, onClose, onSave, exame }) {
   ];
 
   const acompanhantes = [
-    { id: '', nome: 'Nenhum' },
     { id: '1', nome: 'Maria Silva' },
     { id: '2', nome: 'Carlos Alberto' },
     { id: '3', nome: 'Joana Paula' },
@@ -71,7 +71,7 @@ export default function EditExamModal({ visible, onClose, onSave, exame }) {
       return;
     }
 
-    
+
     const exameAtualizado = {
       ...exame,
       Nome,
@@ -91,136 +91,150 @@ export default function EditExamModal({ visible, onClose, onSave, exame }) {
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Cabeçalho */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <MaterialCommunityIcons name="calendar-edit" size={24} color="#4caf50" />
-            <Text style={styles.title}>Editar Exame</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
+          {/* Cabeçalho */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <MaterialCommunityIcons name="calendar-edit" size={24} color="#4caf50" />
+              <Text style={styles.title}>Editar Exame</Text>
+            </View>
+            <TouchableOpacity onPress={onClose}>
+              <MaterialCommunityIcons name="close" size={24} color="#555" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={onClose}>
-            <MaterialCommunityIcons name="close" size={24} color="#555" />
+
+          <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+
+          {/* Nome */}
+          <Text style={styles.label}>Nome do Exame</Text>
+          <TextInput
+            style={styles.input}
+            value={Nome}
+            onChangeText={setNome}
+            placeholder="Digite o nome do exame"
+          />
+
+
+          {/* Médico Requisitante */}
+          <Text style={styles.label}>Médico Requisitante:</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={fkId18}
+              onValueChange={setFkId18}
+              style={styles.picker}
+              itemStyle={styles.pickerItem}
+            >
+              <Picker.Item label="Selecione..." value="" />
+              {medicos.map((m) => (
+                <Picker.Item key={m.id} label={m.nome} value={m.id} />
+              ))}
+            </Picker>
+          </View>
+
+          {/* Data Solicitação */}
+          <Text style={styles.label}>Data de Solicitação:</Text>
+          <TouchableOpacity style={styles.dateField} onPress={() => setShowDataSolicitacao(true)}>
+            <MaterialCommunityIcons name="calendar" size={20} color="#4caf50" />
+            <Text style={styles.dateText}>{DataSolicitacao.toLocaleDateString('pt-BR')}</Text>
           </TouchableOpacity>
-        </View>
+          {showDataSolicitacao && (
+            <DateTimePicker
+              value={DataSolicitacao}
+              mode="date"
+              display="default"
+              onChange={(_, date) => {
+                setShowDataSolicitacao(false);
+                if (date) setDataSolicitacao(date);
+              }}
+            />
+          )}
 
-        <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+          {/* Data do Exame */}
+          <Text style={styles.label}>Data do Exame:</Text>
+          <TouchableOpacity style={styles.dateField} onPress={() => setShowDataExame(true)}>
+            <MaterialCommunityIcons name="calendar" size={20} color="#4caf50" />
+            <Text style={styles.dateText}>{DataExameData.toLocaleDateString('pt-BR')}</Text>
+          </TouchableOpacity>
+          {showDataExame && (
+            <DateTimePicker
+              value={DataExameData}
+              mode="date"
+              display="default"
+              onChange={(_, date) => {
+                setShowDataExame(false);
+                if (date) setDataExameData(date);
+              }}
+            />
+          )}
 
-        {/* Nome */}
-        <Text style={styles.label}>Nome do Exame</Text>
-        <TextInput
-          style={styles.input}
-          value={Nome}
-          onChangeText={setNome}
-          placeholder="Digite o nome do exame"
-        />
+          {/* Hora do Exame */}
+          <Text style={styles.label}>Hora do Exame:</Text>
+          <TouchableOpacity style={styles.dateField} onPress={() => setShowHoraExame(true)}>
+            <MaterialCommunityIcons name="clock-time-four" size={20} color="#4caf50" />
+            <Text style={styles.dateText}>
+              {DataExameHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </TouchableOpacity>
+          {showHoraExame && (
+            <DateTimePicker
+              value={DataExameHora}
+              mode="time"
+              display="default"
+              onChange={(_, date) => {
+                setShowHoraExame(false);
+                if (date) setDataExameHora(date);
+              }}
+            />
+          )}
 
-        {/* Médico requisitante */}
-        <Text style={styles.label}>Médico Requisitante:</Text>
-        <View style={styles.input}>
-          <Picker selectedValue={fkId18} onValueChange={setFkId18}>
-            <Picker.Item label="Selecione um médico..." value="" />
-            {medicos.map((m) => (
-              <Picker.Item key={m.id} label={m.nome} value={m.id} />
-            ))}
-          </Picker>
-        </View>
-
-        {/* Data Solicitação */}
-        <Text style={styles.label}>Data de Solicitação:</Text>
-        <TouchableOpacity style={styles.dateField} onPress={() => setShowDataSolicitacao(true)}>
-          <MaterialCommunityIcons name="calendar" size={20} color="#4caf50" />
-          <Text style={styles.dateText}>{DataSolicitacao.toLocaleDateString('pt-BR')}</Text>
-        </TouchableOpacity>
-        {showDataSolicitacao && (
-          <DateTimePicker
-            value={DataSolicitacao}
-            mode="date"
-            display="default"
-            onChange={(_, date) => {
-              setShowDataSolicitacao(false);
-              if (date) setDataSolicitacao(date);
-            }}
+          {/* Local */}
+          <Text style={styles.label}>Local:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Digite o local do exame"
+            value={Local}
+            onChangeText={setLocal}
           />
-        )}
 
-        {/* Data do Exame */}
-        <Text style={styles.label}>Data do Exame:</Text>
-        <TouchableOpacity style={styles.dateField} onPress={() => setShowDataExame(true)}>
-          <MaterialCommunityIcons name="calendar" size={20} color="#4caf50" />
-          <Text style={styles.dateText}>{DataExameData.toLocaleDateString('pt-BR')}</Text>
-        </TouchableOpacity>
-        {showDataExame && (
-          <DateTimePicker
-            value={DataExameData}
-            mode="date"
-            display="default"
-            onChange={(_, date) => {
-              setShowDataExame(false);
-              if (date) setDataExameData(date);
-            }}
+          {/* Requisitos */}
+          <Text style={styles.label}>Pré-requisitos:</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Jejum, preparo etc."
+            value={Requisito}
+            onChangeText={setRequisito}
+            multiline
           />
-        )}
 
-        {/* Hora do Exame */}
-        <Text style={styles.label}>Hora do Exame:</Text>
-        <TouchableOpacity style={styles.dateField} onPress={() => setShowHoraExame(true)}>
-          <MaterialCommunityIcons name="clock-time-four" size={20} color="#4caf50" />
-          <Text style={styles.dateText}>
-            {DataExameHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </TouchableOpacity>
-        {showHoraExame && (
-          <DateTimePicker
-            value={DataExameHora}
-            mode="time"
-            display="default"
-            onChange={(_, date) => {
-              setShowHoraExame(false);
-              if (date) setDataExameHora(date);
-            }}
-          />
-        )}
+          {/* Acompanhante */}
+          <Text style={styles.label}>Acompanhante:</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={fkId16}
+              onValueChange={setFkId16}
+              style={styles.picker}
+              itemStyle={styles.pickerItem}
+            >
+              <Picker.Item label="Nenhum" value="" />
+              {acompanhantes.map((a) => (
+                <Picker.Item key={a.id} label={a.nome} value={a.id} />
+              ))}
+            </Picker>
+          </View>
 
-        {/* Local */}
-        <Text style={styles.label}>Local:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Digite o local do exame"
-          value={Local}
-          onChangeText={setLocal}
-        />
+          {/* Botões */}
+          <TouchableOpacity style={styles.saveButton} onPress={handleSalvar}>
+            <MaterialCommunityIcons name="check" size={20} color="#fff" />
+            <Text style={styles.saveButtonText}>Salvar Alterações</Text>
+          </TouchableOpacity>
 
-        {/* Requisitos */}
-        <Text style={styles.label}>Pré-requisitos:</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Jejum, preparo etc."
-          value={Requisito}
-          onChangeText={setRequisito}
-          multiline
-        />
-
-        {/* Acompanhante */}
-        <Text style={styles.label}>Acompanhante:</Text>
-        <View style={styles.input}>
-          <Picker selectedValue={fkId16} onValueChange={setFkId16}>
-            {acompanhantes.map((a) => (
-              <Picker.Item key={a.id} label={a.nome} value={a.id} />
-            ))}
-          </Picker>
-        </View>
-
-        {/* Botões */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSalvar}>
-          <MaterialCommunityIcons name="check" size={20} color="#fff" />
-          <Text style={styles.saveButtonText}>Salvar Alterações</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+            <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
+            <Text style={styles.cancelButtonText}>Cancelar</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
     </Modal>
   );
 }

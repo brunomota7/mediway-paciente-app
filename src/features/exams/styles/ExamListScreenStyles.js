@@ -6,13 +6,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#ffffff',
-    paddingTop: 8,
-    paddingBottom: 8,
   },
   container: {
     flexGrow: 1,
     padding: 16,
-    paddingBottom: 100,
     justifyContent: 'flex-start'
   },
   title: {
@@ -50,8 +47,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 4,
-    marginBlock: 8,
   },
   exitButtonText: {
     color: '#388e3c',

@@ -1,9 +1,14 @@
 import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
+  safeArea: {
+    flex: 1,
     backgroundColor: '#ffffff',
+  },
+
+  container: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
     flexGrow: 1,
   },
 
@@ -31,7 +36,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -48,7 +53,6 @@ const styles = StyleSheet.create({
 
   // 🔹 Botão Sair
   exitButton: {
-    marginTop: 12,
     borderWidth: 1,
     borderColor: '#81c784',
     borderRadius: 8,

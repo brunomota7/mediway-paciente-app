@@ -3,17 +3,21 @@
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     paddingHorizontal: 12,
-    paddingVertical: 40,
+    paddingVertical: 12,
   },
   header: {
     alignItems: 'center',
-    padding: 12,
   },
   titleView: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
@@ -36,8 +40,8 @@ export default StyleSheet.create({
     flex: 1,
   },
   areaBtnInferiores: {
-    padding: 12,
-    gap: 12,
+    padding: 8,
+    gap: 8,
   },
   addButton: {
     backgroundColor: '#4caf50',

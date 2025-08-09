@@ -106,13 +106,14 @@ const styles = StyleSheet.create({
   },
 
   exitButton: {
-    backgroundColor: '#e0f2f1',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: 16,
+    borderWidth: 1,
     borderRadius: 8,
+    borderColor: '#388e3c',
     marginTop: 12,
   },
 

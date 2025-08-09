@@ -2,7 +2,7 @@
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styles from '../styles/AddMedicationModalStyles';
 
 export default function EditExamModal({ visible, onClose, onSave, exame }) {
@@ -16,7 +16,7 @@ export default function EditExamModal({ visible, onClose, onSave, exame }) {
   const [showHour, setShowHour] = useState(false);
 
   useEffect(() => {
-    if(exame){
+    if (exame) {
       setNome(exame.Nome);
       setDataExame(new Date(exame.DataExame));
       setHoraExame(new Date(exame.HoraExame));
@@ -24,7 +24,7 @@ export default function EditExamModal({ visible, onClose, onSave, exame }) {
       setRequisito(exame.Requisito);
       setSituacao(exame.Situacao);
     }
-  },[exame]);
+  }, [exame]);
 
   const handleSave = () => {
     onSave({ ...exame, Nome, DataExame, HoraExame, Local, Requisito, Situacao });
@@ -33,26 +33,28 @@ export default function EditExamModal({ visible, onClose, onSave, exame }) {
 
   return (
     <Modal visible={visible} animationType="slide">
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* similar ao AddExamModal */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <MaterialCommunityIcons name="flask-outline" size={24} color="#4caf50" />
-            <Text style={styles.title}>Editar Exame</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
+          {/* similar ao AddExamModal */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <MaterialCommunityIcons name="flask-outline" size={24} color="#4caf50" />
+              <Text style={styles.title}>Editar Exame</Text>
+            </View>
+            <TouchableOpacity onPress={onClose}><MaterialCommunityIcons name="close" size={24} color="#555" /></TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={onClose}><MaterialCommunityIcons name="close" size={24} color="#555" /></TouchableOpacity>
-        </View>
-        {/* campos com valores iniciais */}
-        {/* replicar DataExame/Hora etc */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <MaterialCommunityIcons name="content-save" size={20} color="#fff" />
-          <Text style={styles.saveButtonText}>Salvar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c"/>
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          {/* campos com valores iniciais */}
+          {/* replicar DataExame/Hora etc */}
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <MaterialCommunityIcons name="content-save" size={20} color="#fff" />
+            <Text style={styles.saveButtonText}>Salvar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+            <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
+            <Text style={styles.cancelButtonText}>Cancelar</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
     </Modal>
   );
 }

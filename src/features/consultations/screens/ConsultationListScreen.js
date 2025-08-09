@@ -2,7 +2,7 @@
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import ConsultationTabs from '../components/ConsultationTabs';
 import styles from '../styles/ConsultationListScreenStyles';
 
@@ -14,11 +14,11 @@ import EditConsultationModal from './EditConsultationModal';
  * Segue padrão MVVM, responsivo, com identidade visual Mediway
  */
 export default function ConsultationListScreen({ navigation }) {
-  
+
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false); // ✅ controle do modal de edição
   const [consultaSelecionada, setConsultaSelecionada] = useState(null); // ✅ consulta em edição
-  
+
   // Simulação de dados (substitua futuramente por endpoint da API)
   // Lista de consultas
   const [consultas, setConsultas] = useState([
@@ -114,55 +114,57 @@ export default function ConsultationListScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      {/* 🔹 Título e Identificação */}
-      <Text style={styles.title}>Consultas</Text>
-      <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+    <SafeAreaView style={styles.safeArea} >
+      <View style={styles.container}>
+        {/* 🔹 Título e Identificação */}
+        <Text style={styles.title}>Consultas</Text>
+        <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
 
-      {/* 🔹 Passar os dados de consultas para o componente */}
-      <ConsultationTabs 
-        consultas={consultas} 
-        onEdit={handleEditar} // ✅ passar função de edição 
-      />
-
-      {/* 🔹 Botões Inferiores */}
-      {/* 🔹 Botão de Adicionar Nova Consulta */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <MaterialCommunityIcons name="calendar-plus" size={20} color="#fff" />
-        <Text style={styles.addButtonText}>Adicionar Nova Consulta</Text>
-      </TouchableOpacity>
-
-      {/* 🔹 Botão de Voltar */}
-      <TouchableOpacity
-        style={styles.exitButton}
-        onPress={() => navigation.goBack()}
-      >
-        <MaterialCommunityIcons name="exit-to-app" size={20} color="#388e3c" />
-        <Text style={styles.exitButtonText}>Sair</Text>
-      </TouchableOpacity>
-
-      {/* 🔹 Modal: Adicionar */}
-      <AddConsultationModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSave={handleSalvarConsulta}
-      />
-
-      {/* 🔹 Modal: Editar */}
-      {consultaSelecionada && (
-        <EditConsultationModal
-          visible={editModalVisible}
-          onClose={() => {
-            setEditModalVisible(false);
-            setConsultaSelecionada(null);
-          }}
-          onSave={handleAtualizarConsulta}
-          consulta={consultaSelecionada}
+        {/* 🔹 Passar os dados de consultas para o componente */}
+        <ConsultationTabs
+          consultas={consultas}
+          onEdit={handleEditar} // ✅ passar função de edição 
         />
-      )}
-    </View>
+
+        {/* 🔹 Botões Inferiores */}
+        {/* 🔹 Botão de Adicionar Nova Consulta */}
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <MaterialCommunityIcons name="calendar-plus" size={20} color="#fff" />
+          <Text style={styles.addButtonText}>Adicionar Nova Consulta</Text>
+        </TouchableOpacity>
+
+        {/* 🔹 Botão de Voltar */}
+        <TouchableOpacity
+          style={styles.exitButton}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons name="exit-to-app" size={20} color="#388e3c" />
+          <Text style={styles.exitButtonText}>Sair</Text>
+        </TouchableOpacity>
+
+        {/* 🔹 Modal: Adicionar */}
+        <AddConsultationModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onSave={handleSalvarConsulta}
+        />
+
+        {/* 🔹 Modal: Editar */}
+        {consultaSelecionada && (
+          <EditConsultationModal
+            visible={editModalVisible}
+            onClose={() => {
+              setEditModalVisible(false);
+              setConsultaSelecionada(null);
+            }}
+            onSave={handleAtualizarConsulta}
+            consulta={consultaSelecionada}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
