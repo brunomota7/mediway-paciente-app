@@ -3,9 +3,12 @@
 import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
   modalContainer: {
     padding: 20,
-    backgroundColor: '#ffffff',
     flexGrow: 1,
   },
 

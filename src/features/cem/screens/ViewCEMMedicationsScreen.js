@@ -3,7 +3,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import styles from '../styles/ViewCEMMedicationsStyles';
 
 /**
@@ -13,12 +13,12 @@ import styles from '../styles/ViewCEMMedicationsStyles';
 export default function ViewCEMMedicationsScreen() {
   const route = useRoute();
   const navigation = useNavigation();
-  const { serie, novoMedicamento = null, 
-            medicamentoAtualizado = null, 
-            gavetaExcluida = null } = route.params || {};
+  const { serie, novoMedicamento = null,
+    medicamentoAtualizado = null,
+    gavetaExcluida = null } = route.params || {};
 
   const pacienteLogado = 2; // Edilson (logado)
-   
+
   // Simulação da matriz de gavetas (3x3) com medicamentos e pacientes
   const [gavetas, setGavetas] = useState([
     { pos: 'A1', ocupado: true, paciente: 1, medicamento: 'Dipirona' },
@@ -38,11 +38,11 @@ export default function ViewCEMMedicationsScreen() {
       const atualizada = gavetas.map((g) =>
         g.pos === route.params.novoMedicamento.pos
           ? {
-              ...g,
-              ocupado: true,
-              paciente: route.params.novoMedicamento.paciente,
-              medicamento: route.params.novoMedicamento.medicamento,
-            }
+            ...g,
+            ocupado: true,
+            paciente: route.params.novoMedicamento.paciente,
+            medicamento: route.params.novoMedicamento.medicamento,
+          }
           : g
       );
       setGavetas(atualizada);
@@ -58,11 +58,11 @@ export default function ViewCEMMedicationsScreen() {
       const atualizada = gavetas.map((g) =>
         g.pos === medicamentoAtualizado.pos
           ? {
-              ...g,
-              ocupado: true,
-              paciente: medicamentoAtualizado.paciente,
-              medicamento: medicamentoAtualizado.medicamento,
-            }
+            ...g,
+            ocupado: true,
+            paciente: medicamentoAtualizado.paciente,
+            medicamento: medicamentoAtualizado.medicamento,
+          }
           : g
       );
       setGavetas(atualizada);
@@ -80,7 +80,7 @@ export default function ViewCEMMedicationsScreen() {
       navigation.setParams({ gavetaExcluida: null });
     }
   }, [gavetaExcluida]);
-  
+
   const getCorPaciente = (paciente) => {
     switch (paciente) {
       case 1: return '#2196f3'; // azul
@@ -130,48 +130,50 @@ export default function ViewCEMMedicationsScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      {/* 🔹 Cabeçalho */}
-      <View style={styles.header}>
-        <MaterialCommunityIcons name="radio-tower" size={28} color="#4caf50" />
-        <Text style={styles.title}>Medicamentos da CEM</Text>
-        <Text style={styles.subtitle}>Série: {serie}</Text>
-      </View>
-
-      {/* 🔹 Lista de Pacientes (um abaixo do outro) */}
-      <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
-          <MaterialCommunityIcons name="pill" size={20} color="#2196f3" />
-          <Text style={styles.legendText}>Paciente 1: João da Silva</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* 🔹 Cabeçalho */}
+        <View style={styles.header}>
+          <MaterialCommunityIcons name="radio-tower" size={28} color="#4caf50" />
+          <Text style={styles.title}>Medicamentos da CEM</Text>
+          <Text style={styles.subtitle}>Série: {serie}</Text>
         </View>
-        <View style={styles.legendItem}>
-          <MaterialCommunityIcons name="pill" size={20} color="#4caf50" />
-          <Text style={styles.legendText}>Paciente 2: Edilson Lima (você)</Text>
+
+        {/* 🔹 Lista de Pacientes (um abaixo do outro) */}
+        <View style={styles.legendContainer}>
+          <View style={styles.legendItem}>
+            <MaterialCommunityIcons name="pill" size={20} color="#2196f3" />
+            <Text style={styles.legendText}>Paciente 1: João da Silva</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <MaterialCommunityIcons name="pill" size={20} color="#4caf50" />
+            <Text style={styles.legendText}>Paciente 2: Edilson Lima (você)</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <MaterialCommunityIcons name="pill" size={20} color="#ffeb3b" />
+            <Text style={styles.legendText}>Paciente 3: Maria Oliveira</Text>
+          </View>
         </View>
-        <View style={styles.legendItem}>
-          <MaterialCommunityIcons name="pill" size={20} color="#ffeb3b" />
-          <Text style={styles.legendText}>Paciente 3: Maria Oliveira</Text>
+
+        {/* 🔹 Matriz 3x3 (3 medicamentos por linha) */}
+        <View style={styles.grid}>
+          {gavetas.map((item, index) => renderCell(item, index))}
         </View>
-      </View>
 
-      {/* 🔹 Matriz 3x3 (3 medicamentos por linha) */}
-      <View style={styles.grid}>
-        {gavetas.map((item, index) => renderCell(item, index))}
-      </View>
+        {/* 🔹 Legenda */}
+        <View style={styles.explanation}>
+          <Text style={styles.explanationText}>Legenda:</Text>
+          <Text style={styles.explanationText}>🟢 Medicamento do Paciente 2</Text>
+          <Text style={styles.explanationText}>🟡 Medicamento do Paciente 3</Text>
+          <Text style={styles.explanationText}>⚪ Gaveta disponível</Text>
+        </View>
 
-      {/* 🔹 Legenda */}
-      <View style={styles.explanation}>
-        <Text style={styles.explanationText}>Legenda:</Text>
-        <Text style={styles.explanationText}>🟢 Medicamento do Paciente 2</Text>
-        <Text style={styles.explanationText}>🟡 Medicamento do Paciente 3</Text>
-        <Text style={styles.explanationText}>⚪ Gaveta disponível</Text>
+        {/* 🔙 Botão para voltar */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
+          <Text style={styles.backButtonText}>Voltar à Lista de CEMs</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* 🔙 Botão para voltar */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
-        <Text style={styles.backButtonText}>Voltar à Lista de CEMs</Text>
-      </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }

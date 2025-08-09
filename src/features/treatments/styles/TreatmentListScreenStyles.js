@@ -3,16 +3,20 @@
 import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     padding: 16,
-    backgroundColor: '#fff',
     flexGrow: 1,
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#4caf50',
-    marginBottom: 16,
+    marginVertical: 16,
+    marginHorizontal: 16,
   },
   card: {
     borderWidth: 1,
@@ -49,6 +53,9 @@ const styles = StyleSheet.create({
   statusInativo: {
     color: '#999',
     fontWeight: 'bold',
+  },
+  areaBtn: {
+    paddingHorizontal: 16,
   },
   addButton: {
     marginTop: 16,

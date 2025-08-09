@@ -3,10 +3,14 @@
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
   },
 
   header: {
@@ -90,7 +94,9 @@ export default StyleSheet.create({
   },
 
   backButton: {
+    minWidth: '100%',
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
     paddingHorizontal: 18,
@@ -98,7 +104,6 @@ export default StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1,
     borderColor: '#388e3c',
-    marginTop: 16,
   },
 
   backButtonText: {

@@ -1,9 +1,10 @@
 // 📁 src/features/treatments/screens/TreatmentListScreen.js
- 
+
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
   FlatList,
+  SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -19,7 +20,7 @@ import EditTreatmentModal from './EditTreatmentModal';
  * Padrão MVVM com separação de estilo e lógica.
  */
 export default function TreatmentListScreen({ navigation }) {
-  
+
   const [modalVisible, setModalVisible] = useState(false);
   const [tratamentos, setTratamentos] = useState([
     {
@@ -68,7 +69,7 @@ export default function TreatmentListScreen({ navigation }) {
     setTratamentoSelecionado(tratamento);
     setEditModalVisible(true);
   };
-  
+
   // 🔁 Renderização dos itens
   const renderItem = ({ item }) => (
     <View style={styles.card}>
@@ -86,59 +87,64 @@ export default function TreatmentListScreen({ navigation }) {
       </TouchableOpacity>
     </View>
   );
-  
+
   const formatarData = (data) => {
     const d = new Date(data);
     return d.toLocaleDateString('pt-BR');
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+
       <Text style={styles.title}>Tratamento(s) do Paciente</Text>
 
-      {/* 🔹 Lista de tratamentos */}
-      <FlatList
-        data={tratamentos}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.treatmentName}>{item.nome}</Text>
-              <TouchableOpacity onPress={() => abrirModalEdicao(item)}>
-                <MaterialCommunityIcons name="pencil" size={20} color="#4caf50" />
-              </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* 🔹 Lista de tratamentos */}
+        <FlatList
+          data={tratamentos}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.treatmentName}>{item.nome}</Text>
+                <TouchableOpacity onPress={() => abrirModalEdicao(item)}>
+                  <MaterialCommunityIcons name="pencil" size={20} color="#4caf50" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.cardField}>📅 Início: {formatarData(item.dataInicio)}</Text>
+              <Text style={styles.cardField}>📅 Término: {formatarData(item.dataFim)}</Text>
+              <Text
+                style={[
+                  styles.cardField,
+                  item.status === 0 ? styles.statusAtivo : styles.statusInativo
+                ]}
+              >
+                Situação: {item.status === 0 ? 'Ativo' : 'Inativo'}
+              </Text>
             </View>
-            <Text style={styles.cardField}>📅 Início: {formatarData(item.dataInicio)}</Text>
-            <Text style={styles.cardField}>📅 Término: {formatarData(item.dataFim)}</Text>
-            <Text
-              style={[
-                styles.cardField,
-                item.status === 0 ? styles.statusAtivo : styles.statusInativo
-              ]}
-            >
-              Situação: {item.status === 0 ? 'Ativo' : 'Inativo'}
-            </Text>
-          </View>
-        )}
-      />
+          )}
+        />
+      </ScrollView>
 
-      {/* ➕ Botão para adicionar tratamento */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <MaterialCommunityIcons name="plus" size={20} color="#fff" />
-        <Text style={styles.addButtonText}>Adicionar Novo Tratamento</Text>
-      </TouchableOpacity>
+      <View style={styles.areaBtn}>
+        {/* ➕ Botão para adicionar tratamento */}
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <MaterialCommunityIcons name="plus" size={20} color="#fff" />
+          <Text style={styles.addButtonText}>Adicionar Novo Tratamento</Text>
+        </TouchableOpacity>
 
-      {/* 🔙 Botão de voltar */}
-      <TouchableOpacity
-        style={styles.exitButton}
-        onPress={() => navigation.goBack()}
-      >
-        <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
-        <Text style={styles.exitButtonText}>Sair</Text>
-      </TouchableOpacity>
+        {/* 🔙 Botão de voltar */}
+        <TouchableOpacity
+          style={styles.exitButton}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
+          <Text style={styles.exitButtonText}>Sair</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* 🧾 Modal para adicionar novo tratamento */}
       <AddTreatmentModal
@@ -160,6 +166,6 @@ export default function TreatmentListScreen({ navigation }) {
           setEditModalVisible(false);
         }}
       />
-    </ScrollView>
+    </SafeAreaView>
   );
 }

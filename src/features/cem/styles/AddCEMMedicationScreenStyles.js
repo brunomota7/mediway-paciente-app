@@ -3,13 +3,16 @@
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     padding: 20,
-    backgroundColor: '#fff',
     flexGrow: 1,
   },
   header: {
-    marginBottom: 16,
+    marginBottom: 8,
     alignItems: 'flex-start',
   },
   title: {
@@ -37,6 +40,12 @@ export default StyleSheet.create({
     marginTop: 6,
     fontSize: 16,
   },
+  pickerContainer: {
+    borderWidth: 1,
+    borderRadius: 10,
+    borderColor: '#388e3c',
+    marginTop: 12,
+  },
   detail: {
     fontSize: 14,
     color: '#4caf50',
@@ -61,7 +70,10 @@ export default StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     padding: 12,
-    marginTop: 12,
+    marginTop:12,
+    borderWidth: 1,
+    borderColor: '#388e3c',
+    borderRadius: 6,
   },
   cancelButtonText: {
     color: '#388e3c',

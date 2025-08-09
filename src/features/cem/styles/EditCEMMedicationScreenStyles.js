@@ -3,9 +3,13 @@
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+
   container: {
     padding: 20,
-    backgroundColor: '#ffffff',
     flexGrow: 1,
   },
 
@@ -99,12 +103,13 @@ export default StyleSheet.create({
 
   cancelButton: {
     marginTop: 16,
-    backgroundColor: '#e0e0e0',
     padding: 10,
     borderRadius: 6,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#388e3c',
   },
 
   cancelButtonText: {

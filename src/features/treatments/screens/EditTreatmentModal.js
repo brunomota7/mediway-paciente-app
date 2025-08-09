@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
+  SafeAreaView,
   ScrollView,
   Switch,
   Text,
@@ -94,82 +95,84 @@ export default function EditTreatmentModal({ visible, onClose, onSave, tratament
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
-      <ScrollView contentContainerStyle={styles.modalContainer}>
-        {/* 🔹 Cabeçalho */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <MaterialCommunityIcons name="pill" size={24} color="#4caf50" />
-            <Text style={styles.title}>Editar Tratamento</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.modalContainer}>
+          {/* 🔹 Cabeçalho */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <MaterialCommunityIcons name="pill" size={24} color="#4caf50" />
+              <Text style={styles.title}>Editar Tratamento</Text>
+            </View>
+            <TouchableOpacity onPress={onClose}>
+              <MaterialCommunityIcons name="close" size={24} color="#555" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={onClose}>
-            <MaterialCommunityIcons name="close" size={24} color="#555" />
-          </TouchableOpacity>
-        </View>
 
-        {/* Nome */}
-        <Text style={styles.label}>Nome</Text>
-        <TextInput
-          style={styles.input}
-          value={Nome}
-          onChangeText={setNome}
-          placeholder="Digite o nome do tratamento"
-        />
-
-        {/* Descrição */}
-        <Text style={styles.label}>Descricao</Text>
-        <TextInput
-          style={[styles.input, styles.multilineInput]}
-          value={Descricao}
-          onChangeText={setDescricao}
-          multiline
-          numberOfLines={4}
-          placeholder="Digite a descrição do tratamento"
-        />
-
-        {/* 📅 Data Início */}
-        <Text style={styles.label}>DataInicio</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="dd/mm/aaaa"
-          keyboardType="numeric"
-          maxLength={10}
-          value={DataInicio}
-          onChangeText={(text) => setDataInicio(aplicarMascaraData(text))}
-        />
-
-        {/* 📅 Data Fim */}
-        <Text style={styles.label}>DataFim</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="dd/mm/aaaa"
-          keyboardType="numeric"
-          maxLength={10}
-          value={DataFim}
-          onChangeText={(text) => setDataFim(aplicarMascaraData(text))}
-        />
-
-        {/* ✅ Status */}
-        <View style={styles.switchRow}>
-          <Text style={styles.label}>Status: {Status === '0' ? 'Ativo' : 'Inativo'}</Text>
-          <Switch
-            value={Status === '0'}
-            onValueChange={(val) => setStatus(val ? '0' : '1')}
-            trackColor={{ false: '#ccc', true: '#81c784' }}
-            thumbColor="#4caf50"
+          {/* Nome */}
+          <Text style={styles.label}>Nome</Text>
+          <TextInput
+            style={styles.input}
+            value={Nome}
+            onChangeText={setNome}
+            placeholder="Digite o nome do tratamento"
           />
-        </View>
 
-        {/* 💾 Botões */}
-        <TouchableOpacity style={styles.buttonPrimary} onPress={handleSalvar}>
-          <MaterialCommunityIcons name="content-save" size={20} color="#fff" />
-          <Text style={styles.buttonPrimaryText}>Salvar</Text>
-        </TouchableOpacity>
+          {/* Descrição */}
+          <Text style={styles.label}>Descricao</Text>
+          <TextInput
+            style={[styles.input, styles.multilineInput]}
+            value={Descricao}
+            onChangeText={setDescricao}
+            multiline
+            numberOfLines={4}
+            placeholder="Digite a descrição do tratamento"
+          />
 
-        <TouchableOpacity style={styles.buttonSecondary} onPress={onClose}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
-          <Text style={styles.buttonSecondaryText}>Voltar para Lista de Tratamentos</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          {/* 📅 Data Início */}
+          <Text style={styles.label}>DataInicio</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="dd/mm/aaaa"
+            keyboardType="numeric"
+            maxLength={10}
+            value={DataInicio}
+            onChangeText={(text) => setDataInicio(aplicarMascaraData(text))}
+          />
+
+          {/* 📅 Data Fim */}
+          <Text style={styles.label}>DataFim</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="dd/mm/aaaa"
+            keyboardType="numeric"
+            maxLength={10}
+            value={DataFim}
+            onChangeText={(text) => setDataFim(aplicarMascaraData(text))}
+          />
+
+          {/* ✅ Status */}
+          <View style={styles.switchRow}>
+            <Text style={styles.label}>Status: {Status === '0' ? 'Ativo' : 'Inativo'}</Text>
+            <Switch
+              value={Status === '0'}
+              onValueChange={(val) => setStatus(val ? '0' : '1')}
+              trackColor={{ false: '#ccc', true: '#81c784' }}
+              thumbColor="#4caf50"
+            />
+          </View>
+
+          {/* 💾 Botões */}
+          <TouchableOpacity style={styles.buttonPrimary} onPress={handleSalvar}>
+            <MaterialCommunityIcons name="content-save" size={20} color="#fff" />
+            <Text style={styles.buttonPrimaryText}>Salvar</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.buttonSecondary} onPress={onClose}>
+            <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
+            <Text style={styles.buttonSecondaryText}>Voltar para Lista de Tratamentos</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
     </Modal>
   );
 }
