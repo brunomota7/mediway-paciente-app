@@ -1,9 +1,12 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
-  modalContainer: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#ffffff',
+  },  
+  modalContainer: {
+    flex: 1,
     padding: 20,
     justifyContent: 'flex-start',
   },
@@ -57,9 +60,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#c8e6c9',
     borderRadius: 8,
-    backgroundColor: '#fff',
-    marginBottom: 16,
-    paddingHorizontal: 8,
+    backgroundColor: '#f9f9f9',
+    overflow: 'hidden',
+  },
+  picker: { 
+    color: '#333',
+    ...Platform.select({
+      ios: {},
+      android: {
+        textAling: 'center',
+        textAlignVertical: 'center',
+      },
+    }),
+  },
+  pickerItem: {
+    color: '#333',
   },
   detailsBox: {
     backgroundColor: '#e8f5e9',

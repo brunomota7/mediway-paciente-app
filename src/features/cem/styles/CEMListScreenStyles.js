@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#4caf50',
     marginTop: 8,
-    textAlign: 'center', // ⬅️ centraliza o texto
+    textAlign: 'center',
   },
 
   subtitle: {

@@ -1,9 +1,13 @@
 import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
+  safeArea: {
+    flex: 1,
     backgroundColor: '#ffffff',
+  },
+  container: {
+    paddingVertical: 14,
+    paddingHorizontal: 14,
   },
   header: {
     marginBottom: 12,
@@ -116,7 +120,7 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   exitButton: {
-    marginTop: 20,
+    marginTop: 8,
     borderColor: '#81c784',
     borderWidth: 1,
     borderRadius: 8,
