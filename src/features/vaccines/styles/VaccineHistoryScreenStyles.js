@@ -3,15 +3,24 @@
 import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
+  safeArea: {
+    flex: 1,
     backgroundColor: '#ffffff',
+  },
+  container: {
     flexGrow: 1,
   },
   header: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    flexDirection: 'col',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  headerTitle: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   title: {
     fontSize: 20,
@@ -22,6 +31,7 @@ const styles = StyleSheet.create({
   patientInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
     backgroundColor: '#f0fdf4',
     padding: 12,
     borderRadius: 8,
@@ -104,7 +114,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   addButton: {
-    marginTop: 16,
     backgroundColor: '#4caf50',
     borderRadius: 8,
     paddingVertical: 10,
@@ -119,7 +128,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   exitButton: {
-    marginTop: 12,
+    marginTop: 8,
     borderColor: '#81c784',
     borderWidth: 1,
     borderRadius: 8,
@@ -134,6 +143,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  fixedButtons: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    left: 0,
+    backgroundColor: '#ffffff'
+},
+
 });
 
 export default styles;
