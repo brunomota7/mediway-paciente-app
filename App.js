@@ -97,6 +97,7 @@ export default function App() {
           />
           <Stack.Screen name="Adicionar Medicamento CEM" component={AddCEMMedicationScreen} />
           <Stack.Screen name="Editar Medicamento CEM" component={EditCEMMedicationScreen} />
+          <Stack.Screen name="Notifications" component={NotificationScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
