@@ -31,12 +31,18 @@ export default StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
+  iconBtn: {
+    position: "absolute",
+    right: 12,
+    top: 8,
+  },
   toggle: {
     textAlign: 'right',
     color: '#33691e',
     marginBottom: 10,
   },
   button: {
+    width: "100%",
     backgroundColor: '#2e7d32',
     borderRadius: 8,
     padding: 12,
