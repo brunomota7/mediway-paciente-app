@@ -23,6 +23,7 @@ import { useConsultations } from '../../../hooks/useConsultations';
 import { useExams } from '../../../hooks/useExams';
 import { useMedications } from '../../../hooks/useMedications';
 import { isUpcomingStatus } from '../../../lib/statusColors';
+import { features } from '../../../config/features';
 
 /** Conta itens em aberto x realizados e devolve subtítulo + progresso. */
 function summarize(list, loading) {
@@ -153,21 +154,25 @@ export default function HomeScreen({ navigation }) {
 
         {/* Atalhos */}
         <View style={styles.dashboardContainer}>
+          {features.caregivers && (
+            <TouchableOpacity
+              style={styles.dashboardCard}
+              onPress={() => navigation.navigate('Cuidadores')}
+            >
+              <Image source={require('../../../../assets/icon-rede-cuidadores.png')} style={styles.cardIcon} />
+              <Text style={styles.cardText}>Cuidadores</Text>
+            </TouchableOpacity>
+          )}
+          {features.treatments && (
+            <TouchableOpacity
+              style={styles.dashboardCard}
+              onPress={() => navigation.navigate('Tratamentos')}
+            >
+              <Image source={require('../../../../assets/icon-tratamento.png')} style={styles.cardIcon} />
+              <Text style={styles.cardText}>Tratamento</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            style={styles.dashboardCard}
-            onPress={() => navigation.navigate('Cuidadores')}
-          >
-            <Image source={require('../../../../assets/icon-rede-cuidadores.png')} style={styles.cardIcon} />
-            <Text style={styles.cardText}>Cuidadores</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.dashboardCard}
-            onPress={() => navigation.navigate('Tratamentos')}
-          >
-            <Image source={require('../../../../assets/icon-tratamento.png')} style={styles.cardIcon} />
-            <Text style={styles.cardText}>Tratamento</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
             style={styles.dashboardCard}
             onPress={() => navigation.navigate('CEM')}
           >
@@ -222,11 +227,13 @@ export default function HomeScreen({ navigation }) {
             isActive={activeTab === 'Vacinas'}
             onPress={() => handleTabPress('Vacinas')}
           />
-          <TabIcon 
-            icon={icons.notificacao}
-            isActive={activeTab === 'Notifications'}
-            onPress={() => handleTabPress('Notifications')}
-          />
+          {features.notifications && (
+            <TabIcon
+              icon={icons.notificacao}
+              isActive={activeTab === 'Notifications'}
+              onPress={() => handleTabPress('Notifications')}
+            />
+          )}
         </View>
       </View>
     </SafeAreaView>

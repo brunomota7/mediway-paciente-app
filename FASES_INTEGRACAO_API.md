@@ -26,7 +26,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | 3 | Consultas e exames (leitura) + dashboard | ✅ Concluída (2026-09-10) |
 | 4 | Medicações e Caixa (CEM) | ✅ Concluída (2026-09-10) |
 | 5 | Vacinas (leitura) | ✅ Concluída (2026-09-10) |
-| 6 | Ajuste de escopo / lacunas | ⬜ Não iniciada |
+| 6 | Ajuste de escopo / lacunas | ✅ Concluída (2026-09-10) |
 | 7 | Robustez, QA e fechamento | ⬜ Não iniciada |
 
 ---
@@ -168,7 +168,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 **Fase 3 – Consultas/Exames:** `[x]` C1 `[x]` C2 `[x]` E1 `[x]` E2
 **Fase 4 – Medicações/Caixa:** `[x]` M1 `[x]` M2 `[x]` M3 `[x]` M4 `[x]` M5 `[x]` X1 `[x]` X2 `[x]` X3 `[x]` X4 `[x]` X5
 **Fase 5 – Vacinas:** `[x]` V1 `[x]` V2
-**Fase 6 – Ajuste de escopo:** reuso de A3/A4/A5 na troca de senha logado
+**Fase 6 – Ajuste de escopo:** ✅ flags em `config/features.js`; troca de senha logado reusa A3→A4→A5 (`ChangePasswordScreen`)
 
 Total: **5 globais + 17 do paciente = 22 endpoints** integrados ao final da Fase 5.
 
@@ -380,21 +380,24 @@ Fora de `src/`: `App.js` reescrito (SafeAreaProvider → QueryClientProvider →
 
 ## 11. Fase 6 — Ajuste de escopo e lacunas sem backend
 
+**Status: ✅ Concluída (2026-09-10)** · commit na branch `feat/fase-6-ajuste-escopo`
+
 **Objetivo:** deixar o app coerente com o que a API oferece hoje.
 
 **Tarefas**
-- [ ] **Troca de senha logado** (`ChangePasswordScreen`, L5): reaproveitar o fluxo A3→A4→A5 a partir da área logada (pré-preencher `identifier` com o e-mail do `user`), ou aguardar endpoint dedicado. Sem `bcryptjs`.
-- [ ] **Cuidadores** (L6): ocultar `CaregiverListScreen` e entradas de menu, atrás de `features.caregivers = false`. Registrar pedido de `GET /caregiver/me` ao backend.
-- [ ] **Tratamentos** (L7): ocultar `TreatmentListScreen` e modais (`features.treatments = false`). Alternativa: reduzir a uma visão de `conditionPatient` + `statusPatient` do perfil.
-- [ ] **Notificações** (L8): ocultar `NotificationScreen` ou implementar apenas **notificações locais** derivadas de `hora`/`dias` das medicações e datas de consultas/exames (client-side, sem backend).
-- [ ] **Tipo sanguíneo** (L9): ocultar `BloodTypeScreen`. Registrar pedido de campo em `patients`.
-- [ ] **Login social** (L10): remover telas e botões do `LoginScreen`.
-- [ ] Centralizar as flags em `config/features.js`.
+- [x] `config/features.js`: flags `caregivers`, `treatments`, `notifications`, `bloodType`, `socialLogin` — todas `false`.
+- [x] **Troca de senha logado** (`ChangePasswordScreen`, L5): reescrito como assistente em 2 passos que reusa A3 (`requestReset` com o e-mail do `user`) → A4 (`validateCode`) → A5 (`resetPassword` com o `tokenTemp`), com reenvio. Sem `bcryptjs` (já removido na Fase 1).
+- [x] **Cuidadores** (L6): `Drawer.Screen` "Cuidadores" e o atalho da Home atrás de `features.caregivers`. Tela mantida no repo para quando houver `GET /caregiver/me` (§14).
+- [x] **Tratamentos** (L7): `Stack.Screen` "Tratamentos" e o atalho da Home atrás de `features.treatments`.
+- [x] **Notificações** (L8): `Drawer.Screen` "Notificações", `Stack.Screen` "Notifications", o item do menu e o `TabIcon` da Home atrás de `features.notifications`.
+- [x] **Tipo sanguíneo** (L9): `Drawer.Screen` "Tipo Sanguíneo" e o item do menu atrás de `features.bloodType`.
+- [x] **Login social** (L10): telas e botões já removidos na Fase 1; flag `socialLogin` documenta a decisão.
 
 **Critérios de aceite**
-- Menu lateral / Home não mostram features sem backend.
-- Nenhum botão leva a tela "morta".
-- Lista de pendências de backend registrada (issues) — ver §12.
+- [x] Com as flags `false`, o menu lateral e a Home não mostram Cuidadores / Tratamentos / Notificações / Tipo Sanguíneo; as rotas ficam fora do `AppStack`.
+- [x] Nenhum botão visível leva a uma rota inexistente (`grep` por `navigate('Cuidadores'|'Tratamentos'|'Notifications'|'Tipo Sanguíneo')` só acha chamadas dentro de blocos `{features.* && …}` ou de branches inalcançáveis do `handleTabPress`).
+- [x] Pendências de backend já listadas em §14 (itens 5–8: troca de senha logado, `GET /caregiver/me`, módulo de tratamentos, campo tipo sanguíneo).
+- [x] `npm test` → **81 verdes**; `npx expo export --platform android` sem erros.
 
 ---
 
