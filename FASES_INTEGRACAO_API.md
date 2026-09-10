@@ -23,7 +23,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | 0 | Fundação da camada de integração | ✅ Concluída (2026-09-10) |
 | 1 | Autenticação e sessão | ✅ Concluída (2026-09-10) |
 | 2 | Perfil do paciente e onboarding | ✅ Concluída (2026-09-10) |
-| 3 | Consultas e exames (leitura) + dashboard | ⬜ Não iniciada |
+| 3 | Consultas e exames (leitura) + dashboard | ✅ Concluída (2026-09-10) |
 | 4 | Medicações e Caixa (CEM) | ⬜ Não iniciada |
 | 5 | Vacinas (leitura) | ⬜ Não iniciada |
 | 6 | Ajuste de escopo / lacunas | ⬜ Não iniciada |
@@ -92,8 +92,8 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 
 | # | Método / Rota | Acesso | (→ resposta) | Consumido em | Fase | Status |
 |---|---|---|---|---|---|---|
-| C1 | `GET /consultation/me` | `SCOPE_PACIENTE` | → `ConsultationResponseDTO[]` | `ConsultationListScreen`, `HomeScreen` (dashboard) | 3 | `[ ]` |
-| C2 | `GET /consultation/{consultationId}` | `SCOPE_PACIENTE` | → `ConsultationResponseDTO` | detalhe de consulta (opcional) | 3 | `[ ]` |
+| C1 | `GET /consultation/me` | `SCOPE_PACIENTE` | → `ConsultationResponseDTO[]` | `useConsultations` → `ConsultationListScreen`, `HomeScreen` (dashboard) | 3 | `[x]` |
+| C2 | `GET /consultation/{consultationId}` | `SCOPE_PACIENTE` | → `ConsultationResponseDTO` | `consultationApi.getById` (detalhe — sem tela dedicada ainda) | 3 | `[x]` |
 
 `ConsultationResponseDTO`: `{ consultationId, status, patient:{name,email,number}, doctor:{name,specialty}, details:{consultationDate,consultationTime,localConsultation,description,requirements} }`.
 
@@ -101,8 +101,8 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 
 | # | Método / Rota | Acesso | (→ resposta) | Consumido em | Fase | Status |
 |---|---|---|---|---|---|---|
-| E1 | `GET /exam/me` | `SCOPE_PACIENTE` | → `ExamResponseDTO[]` | `ExamListScreen`, `HomeScreen` (dashboard) | 3 | `[ ]` |
-| E2 | `GET /exam/{examId}` | `SCOPE_PACIENTE` | → `ExamResponseDTO` | detalhe de exame (opcional) | 3 | `[ ]` |
+| E1 | `GET /exam/me` | `SCOPE_PACIENTE` | → `ExamResponseDTO[]` | `useExams` → `ExamListScreen`, `HomeScreen` (dashboard) | 3 | `[x]` |
+| E2 | `GET /exam/{examId}` | `SCOPE_PACIENTE` | → `ExamResponseDTO` | `examApi.getById` (detalhe — sem tela dedicada ainda) | 3 | `[x]` |
 
 `ExamResponseDTO`: `{ examId, requestDate, patient:{name,email}, exam:{examDate,examTime,typeExam,requirements,status,local} }`.
 
@@ -165,7 +165,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 
 **Fase 1 – Auth (global):** `[x]` A1 `[x]` A2 `[x]` A3 `[x]` A4 `[x]` A5
 **Fase 2 – Perfil:** `[x]` P1 `[x]` P2 `[x]` P3
-**Fase 3 – Consultas/Exames:** `[ ]` C1 `[ ]` C2 `[ ]` E1 `[ ]` E2
+**Fase 3 – Consultas/Exames:** `[x]` C1 `[x]` C2 `[x]` E1 `[x]` E2
 **Fase 4 – Medicações/Caixa:** `[ ]` M1 `[ ]` M2 `[ ]` M3 `[ ]` M4 `[ ]` M5 `[ ]` X1 `[ ]` X2 `[ ]` X3 `[ ]` X4 `[ ]` X5
 **Fase 5 – Vacinas:** `[ ]` V1 `[ ]` V2
 **Fase 6 – Ajuste de escopo:** reuso de A3/A4/A5 na troca de senha logado
@@ -298,23 +298,28 @@ Fora de `src/`: `App.js` reescrito (SafeAreaProvider → QueryClientProvider →
 
 ## 8. Fase 3 — Consultas e exames (leitura) + dashboard
 
+**Status: ✅ Concluída (2026-09-10)** · commit na branch `feat/fase-3-consultas-exames`
+
 **Objetivo:** listar consultas e exames reais; dashboard da Home com números reais. **Sem escrita** (L2).
 
 **Endpoints:** C1 `GET /consultation/me` · C2 `GET /consultation/{id}` · E1 `GET /exam/me` · E2 `GET /exam/{id}`
 
 **Tarefas**
-- [ ] `api/endpoints/consultationApi.js` (`listMine`, `getById`) e `examApi.js` (`listMine`, `getById`).
-- [ ] Adapters: `consultationFromApi` (achatar `details`, mapear `status` enum→label), `examFromApi` (achatar `exam`).
-- [ ] `hooks/useConsultations.js`, `hooks/useExams.js` (queries `['consultations','me']`, `['exams','me']`).
-- [ ] `ConsultationListScreen` + `ConsultationTabs`: dados reais; abas por `status`; **ocultar** botão "Adicionar Nova Consulta" e o lápis de edição; `AddConsultationModal`/`EditConsultationModal` fora da navegação (ou atrás de flag desabilitada).
-- [ ] `ExamListScreen` + `ExamTabs`: idem; ocultar `AddExamModal`/`EditExamModal`.
-- [ ] `HomeScreen`: `DashboardCard` de Consultas / Exames / Prescrição com contagens derivadas das listas (`MARCADO` vs `REALIZADO`, etc.); remover números fixos.
-- [ ] Estados de loading / vazio / erro padronizados.
+- [x] `api/endpoints/consultationApi.js` (`listMine` → mapeia array, `getById`) e `examApi.js` (idem).
+- [x] Adapters `consultationFromApi` (achata `details`/`doctor`, `status`→`statusLabel`, `title`) e `examFromApi` (achata `exam`), co-locados nos módulos.
+- [x] `lib/statusColors.js`: `consultationExamStatusColor(status)` e `isUpcomingStatus(status)` (MARCADO/REMARCADO = "Marcadas"; resto = "Histórico").
+- [x] `hooks/useConsultations.js` (`['consultations','me']`) e `hooks/useExams.js` (`['exams','me']`) — só query, `enabled` pela sessão.
+- [x] `ConsultationTabs` reescrito para o modelo adaptado, **sem `onEdit`/lápis**; abas "Marcadas (n)" / "Histórico (n)" por `isUpcomingStatus`.
+- [x] `ExamTabs` idem.
+- [x] `ConsultationListScreen` / `ExamListScreen`: `useConsultations`/`useExams`; **botão "Adicionar" removido**; estados loading (spinner) / erro (retry) / vazio (pull-to-refresh). Mocks e handlers de escrita removidos.
+- [x] `AddConsultationModal`, `EditConsultationModal`, `AddExamModal`, `EditExamModal` (+ styles) **deletados** — sem caminho de escrita para o paciente.
+- [x] `HomeScreen`: cards Consultas/Exames com `Marcados: x | Realizados: y` e progresso reais (`summarize` sobre as listas); card "Prescrição Médica" sem números fixos (contagem real na Fase 4).
+- [x] Testes: `consultationApi.test.js`, `examApi.test.js`, `statusColors.test.js`. `npm test` → **52 verdes**. Build: `npx expo export --platform android` sem erros.
 
 **Critérios de aceite**
-- Listas refletem o que a API retorna para o paciente logado; filtros por status funcionam.
-- Home mostra contadores coerentes com as listas.
-- Não há nenhum caminho de UI que chame `POST/PUT/DELETE` de consulta ou exame.
+- [x] As listas vêm de `GET /consultation/me` / `GET /exam/me`; as abas separam em aberto × histórico pelo `status` real.
+- [x] Home mostra contadores derivados das mesmas listas (React Query compartilha o cache das keys `['consultations','me']` / `['exams','me']`).
+- [x] Nenhum caminho de UI chama `POST/PUT/DELETE` de consulta ou exame (modais e botões removidos).
 
 ---
 

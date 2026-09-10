@@ -68,6 +68,31 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginLeft: 8,
   },
+
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+
+  errorText: {
+    color: '#d32f2f',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+
+  retryButton: {
+    backgroundColor: '#4caf50',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
 });
 
 export default styles;

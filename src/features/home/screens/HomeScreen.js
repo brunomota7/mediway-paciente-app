@@ -19,6 +19,20 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import TabIcon from '../../../components/TabBar/TabBarIcon';
 import { icons } from '../../../const/icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useConsultations } from '../../../hooks/useConsultations';
+import { useExams } from '../../../hooks/useExams';
+import { isUpcomingStatus } from '../../../lib/statusColors';
+
+/** Conta itens em aberto x realizados e devolve subtítulo + progresso. */
+function summarize(list, loading) {
+  const abertos = list.filter((i) => isUpcomingStatus(i.status)).length;
+  const realizados = list.filter((i) => i.status === 'REALIZADO').length;
+  const total = abertos + realizados;
+  return {
+    subtitle: loading ? 'Carregando…' : `Marcados: ${abertos} | Realizados: ${realizados}`,
+    progress: total > 0 ? Math.round((realizados / total) * 100) : 0,
+  };
+}
 
 /**
  * Tela principal da área do paciente com dashboard e menu lateral
@@ -27,6 +41,11 @@ export default function HomeScreen({ navigation }) {
   const [activeTab, setActiveTab] = useState('Home');
   const [avatarUri, setAvatarUri] = useState(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const consultationsQuery = useConsultations();
+  const examsQuery = useExams();
+  const consultasResumo = summarize(consultationsQuery.data ?? [], consultationsQuery.isLoading);
+  const examesResumo = summarize(examsQuery.data ?? [], examsQuery.isLoading);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -101,20 +120,19 @@ export default function HomeScreen({ navigation }) {
           <DashboardCard
             icon={icons.consultas}
             title="Consultas"
-            subtitle="Marcadas: 3 | Realizadas: 2"
-            progress={66}
+            subtitle={consultasResumo.subtitle}
+            progress={consultasResumo.progress}
           />
           <DashboardCard
             icon={icons.exames}
             title="Exames"
-            subtitle="Agendados: 2 | Feitos: 1"
-            progress={50}
+            subtitle={examesResumo.subtitle}
+            progress={examesResumo.progress}
           />
           <DashboardCard
             icon={icons.prescricaoMedica}
             title="Prescrição Médica"
-            subtitle="Tomados: 5 | Pendentes: 2"
-            progress={71}
+            subtitle="Ver em Medicamentos"
           />
         </View>
 
