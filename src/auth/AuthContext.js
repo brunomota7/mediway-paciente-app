@@ -5,14 +5,14 @@
 // (RootNavigator) reage ao campo `status`.
 //
 // Máquina de estados (`status`):
-//   'loading'         -> lendo o SecureStore (tela de carregamento)
+//   'loading'         -> lendo o SecureStore / consultando /patients/me
 //   'signedOut'       -> sem sessão válida  -> AuthStack
-//   'needsOnboarding' -> logado, sem cadastro clínico -> OnboardingStack  (Fase 2)
-//   'signedIn'        -> logado e pronto -> AppStack
+//   'needsOnboarding' -> logado, sem cadastro clínico -> OnboardingStack (Fase 2)
+//   'signedIn'        -> logado e com cadastro clínico -> AppStack
 //
-// Fase 0: o bootstrap considera "logado" a simples presença de um token não
-// expirado. A partir da Fase 1/2 ele também chama `GET /patients/me` para
-// distinguir `signedIn` de `needsOnboarding` e carregar `user`.
+// Fase 1: o bootstrap e o login chamam `GET /patients/me` para distinguir
+// `signedIn` de `needsOnboarding` e carregar `user`. O adapter aqui é mínimo;
+// a Fase 2 move isso para `api/endpoints/patientApi.js` + `patientFromApi`.
 
 import {
   createContext,
@@ -23,7 +23,8 @@ import {
   useState,
 } from 'react';
 
-import { configureAuthBridge } from '../api/client';
+import { api, configureAuthBridge } from '../api/client';
+import { ApiError } from '../api/httpError';
 import { clearSession, isExpired, loadSession, saveSession } from './session';
 
 export const AuthContext = createContext(null);
@@ -33,8 +34,30 @@ const INITIAL_STATE = {
   accessToken: null,
   roles: [],
   expiresAt: null,
-  user: null, // preenchido a partir da Fase 2 (GET /patients/me)
+  user: null,
 };
+
+/** Adapter mínimo de `PatientResponseInfosDTO` -> modelo do app (Fase 2 amplia). */
+function adaptMe(dto) {
+  const personal = dto?.personalInfo ?? {};
+  const contact = dto?.contactInfo ?? {};
+  const medical = dto?.medicalInfo ?? {};
+  return {
+    id: dto?.patientI ?? dto?.patientId ?? null, // B1: typo conhecido do backend
+    name: personal.name ?? null,
+    email: contact.email ?? null,
+    number: contact.number ?? null,
+    dateOfBirth: personal.dateOfBirth ?? null,
+    age: personal.age ?? null,
+    gender: personal.gender ?? null,
+    roles: Array.isArray(personal.roles) ? personal.roles : [],
+    conditionPatient: medical.conditionPatient ?? null,
+    statusPatient: medical.statusPatient ?? null,
+    hasMedicalInfo: Boolean(
+      medical && (medical.statusPatient || medical.conditionPatient),
+    ),
+  };
+}
 
 export function AuthProvider({ children }) {
   const [state, setState] = useState(INITIAL_STATE);
@@ -42,15 +65,13 @@ export function AuthProvider({ children }) {
   // Cópia síncrona do token para o interceptor do axios (que não é um hook).
   const tokenRef = useRef(null);
 
-  const applySession = useCallback((session, nextStatus) => {
+  const applyToken = useCallback((session) => {
     tokenRef.current = session?.accessToken ?? null;
     setState((prev) => ({
       ...prev,
-      status: nextStatus,
       accessToken: session?.accessToken ?? null,
-      roles: session?.roles ?? [],
-      expiresAt: session?.expiresAt ?? null,
-      user: nextStatus === 'signedOut' ? null : prev.user,
+      roles: session?.roles ?? prev.roles,
+      expiresAt: session?.expiresAt ?? prev.expiresAt,
     }));
   }, []);
 
@@ -60,23 +81,60 @@ export function AuthProvider({ children }) {
     setState({ ...INITIAL_STATE, status: 'signedOut' });
   }, []);
 
+  /**
+   * Com uma sessão local válida, consulta `/patients/me` e define o status.
+   * - 401/403 -> sessão inválida no servidor -> signOut
+   * - rede/5xx/timeout -> mantém logado (otimista); `user` fica null
+   */
+  const resolveSession = useCallback(
+    async (session) => {
+      applyToken(session);
+      try {
+        const { data } = await api.get('/patients/me');
+        const user = adaptMe(data);
+        setState((prev) => ({
+          ...prev,
+          user,
+          status: user.hasMedicalInfo ? 'signedIn' : 'needsOnboarding',
+        }));
+        return user;
+      } catch (err) {
+        if (err instanceof ApiError && (err.isUnauthorized || err.isForbidden)) {
+          await signOut();
+          return null;
+        }
+        // Falha transitória: segue logado, sem dados de perfil.
+        setState((prev) => ({ ...prev, user: null, status: 'signedIn' }));
+        return null;
+      }
+    },
+    [applyToken, signOut],
+  );
+
   /** Recebe a resposta de `POST /auth/login` e persiste a sessão. */
   const signIn = useCallback(
     async ({ accessToken, expiresIn, roles }) => {
       const session = await saveSession({ accessToken, expiresIn, roles });
-      // Fase 2: buscar /patients/me aqui e decidir 'needsOnboarding' vs 'signedIn'.
-      applySession(session, 'signedIn');
+      await resolveSession(session);
       return session;
     },
-    [applySession],
+    [resolveSession],
   );
 
-  /** Usado pelas próximas fases após `GET /patients/me`. */
+  /** Re-consulta `/patients/me` (ex.: após concluir o onboarding na Fase 2). */
+  const refreshMe = useCallback(async () => {
+    if (!tokenRef.current) return null;
+    return resolveSession({
+      accessToken: tokenRef.current,
+      expiresAt: state.expiresAt,
+      roles: state.roles,
+    });
+  }, [resolveSession, state.expiresAt, state.roles]);
+
   const setUser = useCallback((user) => {
     setState((prev) => ({ ...prev, user }));
   }, []);
 
-  /** Troca explícita de status (ex.: 'needsOnboarding' -> 'signedIn' na Fase 2). */
   const setStatus = useCallback((status) => {
     setState((prev) => ({ ...prev, status }));
   }, []);
@@ -100,17 +158,16 @@ export function AuthProvider({ children }) {
 
       if (!session || isExpired(session)) {
         if (session) await clearSession();
-        applySession(null, 'signedOut');
+        setState({ ...INITIAL_STATE, status: 'signedOut' });
         return;
       }
-
-      // Fase 0: token válido presente já basta.
-      applySession(session, 'signedIn');
+      await resolveSession(session);
     })();
     return () => {
       alive = false;
     };
-  }, [applySession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -119,10 +176,11 @@ export function AuthProvider({ children }) {
         state.status === 'signedIn' || state.status === 'needsOnboarding',
       signIn,
       signOut,
+      refreshMe,
       setUser,
       setStatus,
     }),
-    [state, signIn, signOut, setUser, setStatus],
+    [state, signIn, signOut, refreshMe, setUser, setStatus],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

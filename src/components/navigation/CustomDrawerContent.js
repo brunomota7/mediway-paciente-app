@@ -1,13 +1,24 @@
 // 📁 src/components/navigation/CustomDrawerContent.js
 
-import { MaterialIcons } from '@expo/vector-icons'; // ou outro pacote de ícones
+import { Alert } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 
+import { useAuth } from '../../auth/useAuth';
+
 /**
- * Menu lateral personalizado utilizado pelo Drawer Navigator do app MediWay.
- * Segue o padrão MVVM (View Component isolado).
+ * Menu lateral personalizado do Drawer (AppStack).
  */
 const CustomDrawerContent = (props) => {
+  const { signOut } = useAuth();
+
+  const confirmSignOut = () => {
+    Alert.alert('Sair', 'Deseja encerrar a sessão?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Sair', style: 'destructive', onPress: () => signOut() },
+    ]);
+  };
+
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ backgroundColor: '#fff' }}>
       <DrawerItem
@@ -44,7 +55,7 @@ const CustomDrawerContent = (props) => {
         label="Sair"
         icon={() => <MaterialIcons name="logout" size={24} color="#2e7d32" />}
         labelStyle={{ color: '#2e7d32' }}
-        onPress={() => alert('Sair')}
+        onPress={confirmSignOut}
       />
     </DrawerContentScrollView>
   );

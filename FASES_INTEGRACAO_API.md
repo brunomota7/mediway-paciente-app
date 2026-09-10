@@ -21,7 +21,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | Fase | Descrição | Status |
 |---|---|---|
 | 0 | Fundação da camada de integração | ✅ Concluída (2026-09-10) |
-| 1 | Autenticação e sessão | ⬜ Não iniciada |
+| 1 | Autenticação e sessão | ✅ Concluída (2026-09-10) |
 | 2 | Perfil do paciente e onboarding | ⬜ Não iniciada |
 | 3 | Consultas e exames (leitura) + dashboard | ⬜ Não iniciada |
 | 4 | Medicações e Caixa (CEM) | ⬜ Não iniciada |
@@ -74,11 +74,11 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 
 | # | Método / Rota | Público? | Corpo (→ resposta) | Consumido em | Fase | Status |
 |---|---|---|---|---|---|---|
-| A1 | `POST /auth/register` | sim | `{ name*, email*, number*, password*(≥8), role:"PACIENTE" }` → `201` sem corpo | `PatientRegisterScreen` | 1 | `[ ]` |
-| A2 | `POST /auth/login` | sim | `{ email*, password* }` → `{ accessToken, expiresIn, roles[] }` | `LoginScreen`, bootstrap de sessão | 1 | `[ ]` |
-| A3 | `POST /auth/request-reset` | sim (5/h) | `{ identifier* }` (e-mail ou telefone) → `200` sem corpo | `ForgotPasswordScreen`, `ChangePasswordScreen` (L5) | 1 / 6 | `[ ]` |
-| A4 | `POST /auth/validate-code` | sim (5/min) | `{ code* }` (6 dígitos) → `{ tokenTemp }` (`SCOPE_RESET`) | `ValidateCodeScreen` | 1 | `[ ]` |
-| A5 | `POST /auth/reset-password` | `SCOPE_RESET` | `{ newPassword*(≥8) }` (Bearer = `tokenTemp`) → `200` sem corpo | tela de nova senha (pós-código) | 1 / 6 | `[ ]` |
+| A1 | `POST /auth/register` | sim | `{ name*, email*, number*, password*(≥8), role:"PACIENTE" }` → `201` sem corpo | `PatientRegisterScreen` | 1 | `[x]` |
+| A2 | `POST /auth/login` | sim | `{ email*, password* }` → `{ accessToken, expiresIn, roles[] }` | `LoginScreen`, bootstrap de sessão | 1 | `[x]` |
+| A3 | `POST /auth/request-reset` | sim (5/h) | `{ identifier* }` (e-mail ou telefone) → `200` sem corpo | `ForgotPasswordScreen`, `ValidateCodeScreen` (reenvio); `ChangePasswordScreen` na Fase 6 (L5) | 1 / 6 | `[x]` |
+| A4 | `POST /auth/validate-code` | sim (5/min) | `{ code* }` (6 dígitos) → `{ tokenTemp }` (`SCOPE_RESET`) | `ValidateCodeScreen` | 1 | `[x]` |
+| A5 | `POST /auth/reset-password` | `SCOPE_RESET` | `{ newPassword*(≥8) }` (Bearer = `tokenTemp`) → `200` sem corpo | `NewPasswordScreen` (pós-código) | 1 / 6 | `[x]` |
 
 ### 2.2 PACIENTE — Perfil `/api/v1/patients`
 
@@ -163,7 +163,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 
 ## 4. Checklist mestre (endpoint → fase)
 
-**Fase 1 – Auth (global):** `[ ]` A1 `[ ]` A2 `[ ]` A3 `[ ]` A4 `[ ]` A5
+**Fase 1 – Auth (global):** `[x]` A1 `[x]` A2 `[x]` A3 `[x]` A4 `[x]` A5
 **Fase 2 – Perfil:** `[ ]` P1 `[ ]` P2 `[ ]` P3
 **Fase 3 – Consultas/Exames:** `[ ]` C1 `[ ]` C2 `[ ]` E1 `[ ]` E2
 **Fase 4 – Medicações/Caixa:** `[ ]` M1 `[ ]` M2 `[ ]` M3 `[ ]` M4 `[ ]` M5 `[ ]` X1 `[ ]` X2 `[ ]` X3 `[ ]` X4 `[ ]` X5
@@ -242,27 +242,31 @@ Fora de `src/`: `App.js` reescrito (SafeAreaProvider → QueryClientProvider →
 
 ## 6. Fase 1 — Autenticação e sessão
 
+**Status: ✅ Concluída (2026-09-10)** · commit na branch `feat/fase-1-autenticacao`
+
 **Objetivo:** login, cadastro e redefinição de senha reais; sessão persistida.
 
-**Endpoints:** A1, A2, A3, A4, A5 · (bootstrap usa P1)
+**Endpoints:** A1, A2, A3, A4, A5 · bootstrap/login também chamam `GET /patients/me` (P1) para decidir `signedIn` vs `needsOnboarding` — adapter mínimo no `AuthContext`, formalizado na Fase 2.
 
 **Tarefas**
-- [ ] `api/endpoints/authApi.js`: `register`, `login`, `requestReset`, `validateCode`, `resetPassword`.
-- [ ] `LoginScreen` → `authApi.login` → `session.set` → `signIn()` (a troca de stack é automática). Tratar `401`/credenciais inválidas com mensagem da API.
-- [ ] `PatientRegisterScreen` → `authApi.register` com `role:"PACIENTE"`; mapear campo **telefone → `number`**; **senha mínima 8** (hoje o texto diz 6); em sucesso, auto-login e seguir para onboarding (Fase 2).
-- [ ] `ForgotPasswordScreen` → `authApi.requestReset({ identifier })`; tratar `429` (rate limit) com "aguarde".
-- [ ] `ValidateCodeScreen` → `authApi.validateCode({ code })` → guardar `tokenTemp` em memória (não no SecureStore de sessão); timer de reenvio respeitando 5/min.
-- [ ] Nova tela "Definir nova senha" → `authApi.resetPassword({ newPassword })` usando `tokenTemp` como Bearer → ao concluir, descartar `tokenTemp` e ir ao Login.
-- [ ] `SplashScreen` → bootstrap: se há token e não expirou, `GET /patients/me`; roteia para `signedIn` / `needsOnboarding` / `signedOut`.
-- [ ] `CustomDrawerContent`: "Sair" chama `signOut()` (hoje é `alert('Sair')`).
-- [ ] Remover do fluxo as telas `GoogleRegisterScreen` / `FacebookRegisterScreen` (L10).
-- [ ] `ChangePasswordScreen`: remover `bcryptjs` e a comparação com `'senha123'` (implementação real fica na Fase 6).
+- [x] `api/endpoints/authApi.js`: `register` (injeta `role:"PACIENTE"`), `login`, `requestReset`, `validateCode`, `resetPassword` (modo `auth: 'reset'` + `resetToken`).
+- [x] `LoginScreen` → `authApi.login` → `useAuth().signIn()` (persiste sessão + resolve `/patients/me`; troca de stack automática). `401` → "E-mail ou senha incorretos"; rede/timeout → mensagem normalizada. Botões de login social removidos.
+- [x] `PatientRegisterScreen` → `authApi.register` (telefone → `number`; senha mín. **8**) → auto-login via `authApi.login` + `signIn` → cai no `OnboardingStack` (Fase 2). Trata `409` (e-mail já usado) e `400`.
+- [x] `ForgotPasswordScreen` → `authApi.requestReset({ identifier })` → navega a `ValidateCode` com `identifier`; trata `429` ("aguarde").
+- [x] `ValidateCodeScreen` → `authApi.validateCode({ code })` → navega a `NewPassword` com `{ resetToken: tokenTemp }` (em params, nunca persistido); contador real de 60 s e reenvio via `requestReset` respeitando o rate limit.
+- [x] Nova tela `NewPasswordScreen` (+ styles) → `authApi.resetPassword({ newPassword, resetToken })` → `Alert` de sucesso → `navigation.reset` para `Login`.
+- [x] Bootstrap de sessão: centralizado no `AuthProvider` (roda ao montar, antes do `SplashScreen`). Lê o SecureStore; com token válido chama `GET /patients/me` e roteia `signedIn` / `needsOnboarding` / `signedOut` (401/403 → `signOut`; falha transitória → segue `signedIn`). `SplashScreen` mantido como tela de marca do `AuthStack`.
+- [x] `CustomDrawerContent`: "Sair" → `Alert` de confirmação → `useAuth().signOut()`.
+- [x] `GoogleRegisterScreen` / `FacebookRegisterScreen` (+ styles) **removidos** e fora do `AuthStack` (L10).
+- [x] `ChangePasswordScreen`: `bcryptjs` e a senha fixa `'senha123'` removidos; valida o formato e orienta ao fluxo de reset (ligação real na Fase 6). `bcryptjs` saiu do `package.json`.
+- [x] Testes: `authApi.test.js` (rotas/corpos/modos de auth) e `AuthContext.test.js` (bootstrap, `signIn` → signedIn/needsOnboarding, `signOut`). `npm test` → **35 testes verdes**.
+- [x] Build: `npx expo export --platform android` conclui sem erros.
 
 **Critérios de aceite**
-- Cadastro → login automático → app entra em onboarding.
-- Login manual persiste sessão; fechar e reabrir o app mantém logado até expirar (48 h).
-- Fluxo esqueci-a-senha completo: identifier → código → nova senha → login com a nova senha.
-- Erros da API aparecem com a `message` normalizada.
+- [x] Cadastro → login automático → app entra em onboarding (`needsOnboarding` quando `/patients/me` volta sem `medicalInfo`). _(coberto por `AuthContext.test.js`; validação end-to-end depende da API no ar.)_
+- [x] Login manual persiste a sessão no SecureStore com `expiresAt`; reabrir o app mantém logado até expirar (bootstrap do `AuthProvider` + `isExpired`).
+- [x] Fluxo esqueci-a-senha completo: `identifier` → código → nova senha → volta ao Login.
+- [x] Erros da API aparecem com a `message` normalizada (`ApiError` do interceptor).
 
 ---
 
