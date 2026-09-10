@@ -18,7 +18,7 @@ import { useAuth } from '../../../auth/useAuth';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const LoginScreen = ({ navigation }) => {
-  const { signIn } = useAuth();
+  const { signIn, reason, clearReason } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,6 +64,15 @@ const LoginScreen = ({ navigation }) => {
           style={styles.logo}
         />
         <Text style={styles.slogan}>Facilite o cuidado, fortaleça o amor</Text>
+
+        {reason === 'expired' ? (
+          <TouchableOpacity onPress={clearReason} style={styles.expiredBanner}>
+            <MaterialCommunityIcons name="clock-alert-outline" size={16} color="#8d6e00" />
+            <Text style={styles.expiredText}>
+              Sua sessão expirou. Entre novamente.
+            </Text>
+          </TouchableOpacity>
+        ) : null}
 
         <View style={styles.inputContainer}>
           <TextInput

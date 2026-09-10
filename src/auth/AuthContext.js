@@ -10,8 +10,8 @@
 //   'needsOnboarding' -> logado, sem cadastro clínico -> OnboardingStack (Fase 2)
 //   'signedIn'        -> logado e com cadastro clínico -> AppStack
 //
-// Fase 1/2: o bootstrap e o login chamam `GET /patients/me` (via `patientApi`)
-// para distinguir `signedIn` de `needsOnboarding` e carregar `user`.
+// `reason` acompanha o `signedOut`: 'expired' quando a saída foi automática
+// (401 ou token vencido) — a tela de login mostra o aviso (L11).
 
 import {
   createContext,
@@ -21,6 +21,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { AppState } from 'react-native';
 
 import { configureAuthBridge } from '../api/client';
 import { ApiError } from '../api/httpError';
@@ -35,16 +36,19 @@ const INITIAL_STATE = {
   roles: [],
   expiresAt: null,
   user: null,
+  reason: null,
 };
 
 export function AuthProvider({ children }) {
   const [state, setState] = useState(INITIAL_STATE);
 
-  // Cópia síncrona do token para o interceptor do axios (que não é um hook).
+  // Cópias síncronas para os interceptors / listeners (que não são hooks).
   const tokenRef = useRef(null);
+  const expiresAtRef = useRef(null);
 
   const applyToken = useCallback((session) => {
     tokenRef.current = session?.accessToken ?? null;
+    expiresAtRef.current = session?.expiresAt ?? null;
     setState((prev) => ({
       ...prev,
       accessToken: session?.accessToken ?? null,
@@ -53,15 +57,20 @@ export function AuthProvider({ children }) {
     }));
   }, []);
 
-  const signOut = useCallback(async () => {
+  const signOut = useCallback(async (reason = null) => {
     tokenRef.current = null;
+    expiresAtRef.current = null;
     await clearSession();
-    setState({ ...INITIAL_STATE, status: 'signedOut' });
+    setState({ ...INITIAL_STATE, status: 'signedOut', reason });
+  }, []);
+
+  const clearReason = useCallback(() => {
+    setState((prev) => (prev.reason ? { ...prev, reason: null } : prev));
   }, []);
 
   /**
    * Com uma sessão local válida, consulta `/patients/me` e define o status.
-   * - 401/403 -> sessão inválida no servidor -> signOut
+   * - 401/403 -> sessão inválida no servidor -> signOut('expired')
    * - rede/5xx/timeout -> mantém logado (otimista); `user` fica null
    */
   const resolveSession = useCallback(
@@ -72,12 +81,13 @@ export function AuthProvider({ children }) {
         setState((prev) => ({
           ...prev,
           user,
+          reason: null,
           status: user.hasMedicalInfo ? 'signedIn' : 'needsOnboarding',
         }));
         return user;
       } catch (err) {
         if (err instanceof ApiError && (err.isUnauthorized || err.isForbidden)) {
-          await signOut();
+          await signOut('expired');
           return null;
         }
         // Falha transitória: segue logado, sem dados de perfil.
@@ -103,10 +113,10 @@ export function AuthProvider({ children }) {
     if (!tokenRef.current) return null;
     return resolveSession({
       accessToken: tokenRef.current,
-      expiresAt: state.expiresAt,
+      expiresAt: expiresAtRef.current,
       roles: state.roles,
     });
-  }, [resolveSession, state.expiresAt, state.roles]);
+  }, [resolveSession, state.roles]);
 
   const setUser = useCallback((user) => {
     setState((prev) => ({ ...prev, user }));
@@ -120,10 +130,21 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     configureAuthBridge({
       getToken: () => tokenRef.current,
-      onUnauthorized: () => {
-        signOut();
+      onUnauthorized: (reason) => {
+        signOut(reason || 'expired');
       },
     });
+  }, [signOut]);
+
+  // Token vencido enquanto o app estava em background -> desloga ao voltar.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active') return;
+      if (tokenRef.current && expiresAtRef.current && Date.now() >= expiresAtRef.current) {
+        signOut('expired');
+      }
+    });
+    return () => sub.remove();
   }, [signOut]);
 
   // Bootstrap: roda uma vez ao montar.
@@ -134,8 +155,12 @@ export function AuthProvider({ children }) {
       if (!alive) return;
 
       if (!session || isExpired(session)) {
-        if (session) await clearSession();
-        setState({ ...INITIAL_STATE, status: 'signedOut' });
+        if (session) {
+          await clearSession();
+          setState({ ...INITIAL_STATE, status: 'signedOut', reason: 'expired' });
+        } else {
+          setState({ ...INITIAL_STATE, status: 'signedOut' });
+        }
         return;
       }
       await resolveSession(session);
@@ -156,8 +181,9 @@ export function AuthProvider({ children }) {
       refreshMe,
       setUser,
       setStatus,
+      clearReason,
     }),
-    [state, signIn, signOut, refreshMe, setUser, setStatus],
+    [state, signIn, signOut, refreshMe, setUser, setStatus, clearReason],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

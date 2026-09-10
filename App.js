@@ -6,6 +6,7 @@
 //       AuthProvider       -> sessão + bootstrap do token (SecureStore)
 //         NavigationContainer
 //           RootNavigator  -> escolhe AuthStack / OnboardingStack / AppStack
+//         NetworkBanner    -> faixa "sem conexão" (overlay)
 //
 // A navegação por feature vive em src/navigation/*.
 
@@ -16,6 +17,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { queryClient } from './src/api/queryClient';
 import { AuthProvider } from './src/auth/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
+import NetworkBanner from './src/components/feedback/NetworkBanner';
 
 export default function App() {
   return (
@@ -25,6 +27,7 @@ export default function App() {
           <NavigationContainer>
             <RootNavigator />
           </NavigationContainer>
+          <NetworkBanner />
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

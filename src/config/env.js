@@ -40,4 +40,21 @@ export const IS_LOCAL_API = /localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.|10\.\
   API_URL,
 );
 
-export default { API_URL, API_BASE, REQUEST_TIMEOUT_MS, IS_LOCAL_API };
+/** `true` se a URL usa HTTP simples (cleartext). */
+export const IS_CLEARTEXT = /^http:\/\//i.test(API_URL);
+
+// Cleartext só é aceitável em dev/local. Builds de release do Android bloqueiam
+// HTTP por padrão (sem `usesCleartextTraffic`), então produção precisa de HTTPS
+// via EXPO_PUBLIC_API_URL. Avisa em DEV quando a URL parece "de produção" e HTTP.
+const IS_TEST =
+  typeof process !== 'undefined' &&
+  (process.env?.JEST_WORKER_ID !== undefined || process.env?.NODE_ENV === 'test');
+
+if (typeof __DEV__ !== 'undefined' && __DEV__ && !IS_TEST && IS_CLEARTEXT && !IS_LOCAL_API) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[env] API_URL usa HTTP em host não-local (${API_URL}). Builds de release exigem HTTPS.`,
+  );
+}
+
+export default { API_URL, API_BASE, REQUEST_TIMEOUT_MS, IS_LOCAL_API, IS_CLEARTEXT };

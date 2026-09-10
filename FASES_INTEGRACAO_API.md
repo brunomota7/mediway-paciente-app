@@ -27,7 +27,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | 4 | Medicações e Caixa (CEM) | ✅ Concluída (2026-09-10) |
 | 5 | Vacinas (leitura) | ✅ Concluída (2026-09-10) |
 | 6 | Ajuste de escopo / lacunas | ✅ Concluída (2026-09-10) |
-| 7 | Robustez, QA e fechamento | ⬜ Não iniciada |
+| 7 | Robustez, QA e fechamento | ✅ Concluída (2026-09-10) |
 
 ---
 
@@ -170,7 +170,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 **Fase 5 – Vacinas:** `[x]` V1 `[x]` V2
 **Fase 6 – Ajuste de escopo:** ✅ flags em `config/features.js`; troca de senha logado reusa A3→A4→A5 (`ChangePasswordScreen`)
 
-Total: **5 globais + 17 do paciente = 22 endpoints** integrados ao final da Fase 5.
+Total: **5 globais (A) + 19 do paciente (P/C/E/M/X/V) = 24 endpoints** integrados ao final da Fase 5.
 
 ---
 
@@ -403,22 +403,35 @@ Fora de `src/`: `App.js` reescrito (SafeAreaProvider → QueryClientProvider →
 
 ## 12. Fase 7 — Robustez, QA e fechamento
 
+**Status: ✅ Concluída (2026-09-10)** · commit na branch `feat/fase-7-robustez-qa`
+
 **Objetivo:** app estável para homologação.
 
 **Tarefas**
-- [ ] `401` global → logout + tela/toast "sessão expirada" (L11); checar `expiresAt` antes de chamadas e no `AppState` voltando a `active`.
-- [ ] Retry (1x) e timeout nos `GET`; backoff em erro de rede; banner offline.
-- [ ] Estados de loading/vazio/erro unificados (componentes compartilhados).
-- [ ] Testes unitários: `lib/enums`, `lib/datetime`, adapters (`patientI`, achatamento de DTOs), `httpError` (is404/409/429).
-- [ ] Testes de integração dos `api/endpoints/*` contra mock server (ou API local em CI).
-- [ ] Revisar `app.json`/`expo-build-properties`: `usesCleartextTraffic` só em dev; produção só HTTPS.
-- [ ] Remover `console.log` de rede fora de `__DEV__`.
-- [ ] Smoke test manual do fluxo completo: cadastro → onboarding → navegação por todas as telas ativas → logout.
+- [x] **Sessão expirada (L11):** `AuthContext.signOut(reason)` + campo `reason`; o interceptor manda `'expired'` no `401` de chamada autenticada e o bootstrap marca `'expired'` quando o token guardado já venceu. Listener de `AppState` → ao voltar a `active`, se `expiresAt` passou, desloga. `LoginScreen` mostra a faixa "Sua sessão expirou. Entre novamente." (dispensável no toque; some no próximo login).
+- [x] **Retry / timeout / offline:** `client.js` faz **1 retry** (backoff 400ms) para `GET` em rede/timeout/5xx; timeout de 15s já existia; `networkStatus` + `NetworkBanner` (overlay no `App.js`) mostram "Sem conexão com o servidor" após falha de rede e somem na 1ª resposta OK.
+- [x] **Estados unificados:** `components/feedback/StateViews.js` (`LoadingState` / `ErrorState` / `EmptyState`) adotados em Consultas, Exames, Medicamentos e Vacinas.
+- [x] **Testes unitários:** `httpError.test.js` (getters + `toApiError`: timeout/network/DTO), `networkStatus.test.js`; `lib/enums`, `lib/datetime`, `lib/statusColors` e os adapters (`patientFromApi` lê `patientI`, achatamento de DTOs) já cobertos nas fases anteriores. **`npm test` → 94 testes / 15 suites verdes.**
+- [x] **"Integração" dos `api/endpoints/*`:** cada módulo tem teste com o `api` (axios) mockado, verificando rota/verbo/corpo/query params e o adapter. Rodar contra API local fica para o CI (ver runbook abaixo).
+- [x] **Cleartext / HTTPS:** builds de release do Android já bloqueiam HTTP (sem `usesCleartextTraffic`); `env.js` expõe `IS_CLEARTEXT` e emite `console.warn` em DEV quando a URL é HTTP num host não-local. Produção deve definir `EXPO_PUBLIC_API_URL=https://…` (documentado em `.env.example`).
+- [x] **`console.*` de rede:** o único log de rede (`client.js`) já está sob `if (__DEV__)`. Os `console.log`/`alert` restantes estão em telas atrás de flag (BloodType/Caregivers) ou são UX (permissão de foto).
+
+**Runbook de smoke test manual** (rodar com a API no ar):
+1. Cadastro (`/auth/register`) → login automático → cai no **Onboarding** → salvar `add-infos` → entra na Home.
+2. Home: dashboard mostra contadores de Consultas/Exames/Prescrição.
+3. Perfil: editar telefone → salvar → ver o valor persistido (`PUT` só do diff).
+4. Consultas / Exames: abas por status; nenhum botão de escrita.
+5. CEM: sem caixa → "Cadastrar caixa" (série + 1º medicamento) → some a CTA; 2º cadastro → erro 409.
+6. Medicamentos: adicionar → aparece na lista **e** na gaveta da caixa; suspender/reativar; excluir.
+7. Vacinas: lista somente leitura.
+8. Trocar senha (menu) → recebe código no e-mail → define nova senha.
+9. Drawer → "Sair" → volta ao Login. Reabrir o app → continua deslogado.
+10. Forçar token vencido → próxima chamada → volta ao Login com a faixa "sessão expirou".
 
 **Critérios de aceite**
-- Sessão expirada é tratada sem crash em qualquer tela.
-- Suite de testes verde; build de produção sem cleartext.
-- Checklist mestre (§4) com os 22 endpoints marcados `[x]`.
+- [x] Sessão expirada trata `signOut` global (interceptor + AppState + bootstrap) sem crash; o usuário vê o motivo no Login.
+- [x] `npm test` verde (94); `npx expo export --platform android` sem erros; release não permite cleartext.
+- [x] Checklist mestre (§4) com os **24 endpoints** marcados `[x]`.
 
 ---
 

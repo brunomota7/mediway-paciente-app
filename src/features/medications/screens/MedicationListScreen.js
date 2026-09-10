@@ -6,7 +6,7 @@
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 
 import MedicationTabs from '../components/MedicationTabs';
 import styles from '../styles/MedicationListScreenStyles';
@@ -15,6 +15,7 @@ import EditMedicationModal from './EditMedicationModal';
 import { useAuth } from '../../../auth/useAuth';
 import { useMedications } from '../../../hooks/useMedications';
 import { useMedicineBox } from '../../../hooks/useMedicineBox';
+import { ErrorState, LoadingState } from '../../../components/feedback/StateViews';
 
 export default function MedicationListScreen({ navigation }) {
   const { user } = useAuth();
@@ -45,18 +46,9 @@ export default function MedicationListScreen({ navigation }) {
 
         <View style={styles.contentContainer}>
           {isLoading ? (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <ActivityIndicator size="large" color="#2e7d32" />
-            </View>
+            <LoadingState />
           ) : isError ? (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-              <Text style={{ color: '#d32f2f', textAlign: 'center', marginBottom: 12 }}>
-                {error?.message || 'Não foi possível carregar os medicamentos.'}
-              </Text>
-              <TouchableOpacity style={styles.addButton} onPress={() => refetch()}>
-                <Text style={styles.addButtonText}>Tentar novamente</Text>
-              </TouchableOpacity>
-            </View>
+            <ErrorState message={error?.message} onRetry={refetch} />
           ) : (
             <MedicationTabs medicamentos={medications} onEdit={openEdit} />
           )}

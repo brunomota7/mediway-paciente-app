@@ -7,7 +7,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   SafeAreaView,
@@ -21,6 +20,7 @@ import { useAuth } from '../../../auth/useAuth';
 import { useVaccines } from '../../../hooks/useVaccines';
 import { Gender } from '../../../lib/enums';
 import { toBrDate } from '../../../lib/datetime';
+import { EmptyState, ErrorState, LoadingState } from '../../../components/feedback/StateViews';
 
 const STATUS_COLOR = { APLICADA: '#2e7d32', AGENDADA: '#1976d2', ATRASADA: '#e53935' };
 
@@ -98,32 +98,20 @@ export default function VaccineHistoryScreen() {
       </View>
 
       {isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#2e7d32" />
-        </View>
+        <LoadingState />
       ) : isError ? (
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>
-            {error?.message || 'Não foi possível carregar as vacinas.'}
-          </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-            <Text style={styles.retryButtonText}>Tentar novamente</Text>
-          </TouchableOpacity>
-        </View>
+        <ErrorState message={error?.message} onRetry={refetch} />
       ) : (
         <FlatList
           data={vacinas}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={
-            vacinas.length === 0 ? styles.centered : { padding: 16, paddingBottom: 80 }
+            vacinas.length === 0 ? { flexGrow: 1 } : { padding: 16, paddingBottom: 80 }
           }
           renderItem={renderItem}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           ListEmptyComponent={
-            <>
-              <MaterialCommunityIcons name="needle" size={48} color="#c8e6c9" />
-              <Text style={styles.emptyText}>Nenhuma vacina registrada.</Text>
-            </>
+            <EmptyState icon="needle" message="Nenhuma vacina registrada." />
           }
         />
       )}

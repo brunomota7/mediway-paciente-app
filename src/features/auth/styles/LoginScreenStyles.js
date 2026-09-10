@@ -83,4 +83,20 @@ export default StyleSheet.create({
     color: '#d32f2f',
     marginBottom: 10,
   },
+  expiredBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fff8e1',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    width: '100%',
+  },
+  expiredText: {
+    color: '#8d6e00',
+    fontSize: 13,
+    flexShrink: 1,
+  },
 });
