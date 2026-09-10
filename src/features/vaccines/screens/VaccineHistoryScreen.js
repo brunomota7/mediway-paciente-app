@@ -1,19 +1,28 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
+// 📁 src/features/vaccines/screens/VaccineHistoryScreen.js
+//
+// Carteira de vacinas — SOMENTE LEITURA (L1). Dados de GET /vaccine/me
+// (useVaccines). O paciente não registra/edita/exclui vacinas (endpoints
+// exigem ADMIN/CUIDADOR/MÉDICO).
+
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import {
+  ActivityIndicator,
   FlatList,
+  RefreshControl,
   SafeAreaView,
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
 
-import DeleteVaccineModal from "../screens/DeleteVaccineModal";
-import styles from "../styles/VaccineHistoryScreenStyles";
-import { useAuth } from "../../../auth/useAuth";
-import { Gender } from "../../../lib/enums";
-import { toBrDate } from "../../../lib/datetime";
+import styles from '../styles/VaccineHistoryScreenStyles';
+import { useAuth } from '../../../auth/useAuth';
+import { useVaccines } from '../../../hooks/useVaccines';
+import { Gender } from '../../../lib/enums';
+import { toBrDate } from '../../../lib/datetime';
+
+const STATUS_COLOR = { APLICADA: '#2e7d32', AGENDADA: '#1976d2', ATRASADA: '#e53935' };
 
 export default function VaccineHistoryScreen() {
   const navigation = useNavigation();
@@ -23,85 +32,62 @@ export default function VaccineHistoryScreen() {
     user?.dateOfBirth ? `Nascimento: ${toBrDate(user.dateOfBirth)}` : null,
     user?.age != null ? `Idade: ${user.age}` : null,
     user?.gender ? `Sexo: ${Gender.label(user.gender)}` : null,
-  ].filter(Boolean).join(' | ');
+  ]
+    .filter(Boolean)
+    .join(' | ');
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [vacinaSelecionada, setVacinaSelecionada] = useState(null);
+  const { data: vacinas = [], isLoading, isError, error, refetch, isRefetching } = useVaccines();
 
-  const [vacinas, setVacinas] = useState([
-    {
-      id: "1",
-      nome: "Hepatite B",
-      tipoDose: "Primeira Dose",
-      dataVacinou: "12/02/2023 08:30",
-      lote: "A123",
-      dataFabricacao: "01/01/2023",
-      proximaDose: "12/03/2023",
-    },
-    {
-      id: "2",
-      nome: "Tétano",
-      tipoDose: "Reforço",
-      dataVacinou: "01/06/2023 14:00",
-      lote: "B456",
-      dataFabricacao: "10/05/2023",
-      proximaDose: "01/06/2028",
-    },
-    {
-      id: "3",
-      nome: "Influenza",
-      tipoDose: "Anual",
-      dataVacinou: "15/04/2024 10:00",
-      lote: "C789",
-      dataFabricacao: "03/03/2024",
-      proximaDose: "15/04/2025",
-    },
-    {
-      id: "4",
-      nome: "Tétano",
-      tipoDose: "Reforço",
-      dataVacinou: "01/06/2024 14:00",
-      lote: "B457",
-      dataFabricacao: "10/05/2024",
-      proximaDose: "01/06/2029",
-    },
-    {
-      id: "5",
-      nome: "Influenza",
-      tipoDose: "Anual",
-      dataVacinou: "15/04/2025 10:00",
-      lote: "C790",
-      dataFabricacao: "03/03/2025",
-      proximaDose: "15/04/2026",
-    },
-  ]);
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <MaterialCommunityIcons name="needle" size={20} color="#2e7d32" />
+        <Text style={styles.vaccineName}>{item.nome}</Text>
+      </View>
 
-  const abrirModalExcluir = (vacina) => {
-    setVacinaSelecionada(vacina);
-    setModalVisible(true);
-  };
+      <View
+        style={[styles.statusBadge, { backgroundColor: STATUS_COLOR[item.status] ?? '#9e9e9e' }]}
+      >
+        <Text style={styles.statusText}>{item.statusLabel}</Text>
+      </View>
 
-  const confirmarExclusao = () => {
-    setVacinas((prev) => prev.filter((v) => v.id !== vacinaSelecionada.id));
-    setModalVisible(false);
-  };
+      <View style={styles.cardContent}>
+        <Text style={styles.cardField}>
+          <Text style={styles.fieldLabel}>Tipo de dose:</Text> {item.tipoDoseLabel}
+        </Text>
+        {item.dataVacinouLabel ? (
+          <Text style={styles.cardField}>
+            <Text style={styles.fieldLabel}>Data:</Text> {item.dataVacinouLabel}
+          </Text>
+        ) : null}
+        {item.lote ? (
+          <Text style={styles.cardField}>
+            <Text style={styles.fieldLabel}>Lote:</Text> {item.lote}
+          </Text>
+        ) : null}
+        {item.dataFabricacaoLabel ? (
+          <Text style={styles.cardField}>
+            <Text style={styles.fieldLabel}>Fabricação:</Text> {item.dataFabricacaoLabel}
+          </Text>
+        ) : null}
+        {item.proximaDoseLabel ? (
+          <Text style={styles.cardField}>
+            <Text style={styles.fieldLabel}>Próxima dose:</Text> {item.proximaDoseLabel}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Cabeçalho */}
       <View style={styles.header}>
         <View style={styles.headerTitle}>
-          {/* <MaterialCommunityIcons name="needle" size={28} color="#4caf50" /> */}
           <Text style={styles.title}>Carteira de Vacinas</Text>
         </View>
 
-        {/* Informações do paciente */}
         <View style={styles.patientInfo}>
-          <MaterialCommunityIcons
-            name="account-circle"
-            size={26}
-            color="#4caf50"
-          />
+          <MaterialCommunityIcons name="account-circle" size={26} color="#4caf50" />
           <View>
             <Text style={styles.patientName}>{patientName}</Text>
             {patientDetails ? (
@@ -111,90 +97,43 @@ export default function VaccineHistoryScreen() {
         </View>
       </View>
 
-      {/* Lista de vacinas */}
-      <FlatList
-        data={vacinas}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 120 }} // espaço p/ botões fixos
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <MaterialCommunityIcons
-                name="needle"
-                size={20}
-                color="#2e7d32"
-              />
-              <Text style={styles.vaccineName}>{item.nome}</Text>
-            </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardField}>
-                <Text style={styles.fieldLabel}>Tipo de dose:</Text>{" "}
-                {item.tipoDose}
-              </Text>
-              <Text style={styles.cardField}>
-                <Text style={styles.fieldLabel}>Data:</Text> {item.dataVacinou}
-              </Text>
-              <Text style={styles.cardField}>
-                <Text style={styles.fieldLabel}>Lote:</Text> {item.lote}
-              </Text>
-              <Text style={styles.cardField}>
-                <Text style={styles.fieldLabel}>Fabricação:</Text>{" "}
-                {item.dataFabricacao}
-              </Text>
-              <Text style={styles.cardField}>
-                <Text style={styles.fieldLabel}>Próxima dose:</Text>{" "}
-                {item.proximaDose}
-              </Text>
-            </View>
-            <View style={styles.cardActions}>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() =>
-                  navigation.navigate("Editar Vacina", { vacina: item })
-                }
-              >
-                <MaterialCommunityIcons name="pencil" size={18} color="#fff" />
-                <Text style={styles.editText}>Editar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => abrirModalExcluir(item)}
-              >
-                <MaterialCommunityIcons name="delete" size={18} color="#fff" />
-                <Text style={styles.deleteText}>Excluir</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      />
+      {isLoading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#2e7d32" />
+        </View>
+      ) : isError ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>
+            {error?.message || 'Não foi possível carregar as vacinas.'}
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+            <Text style={styles.retryButtonText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={vacinas}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={
+            vacinas.length === 0 ? styles.centered : { padding: 16, paddingBottom: 80 }
+          }
+          renderItem={renderItem}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+          ListEmptyComponent={
+            <>
+              <MaterialCommunityIcons name="needle" size={48} color="#c8e6c9" />
+              <Text style={styles.emptyText}>Nenhuma vacina registrada.</Text>
+            </>
+          }
+        />
+      )}
 
-      {/* Botões fixos no rodapé */}
       <View style={styles.fixedButtons}>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate("Adicionar Vacina")}
-        >
-          <MaterialCommunityIcons name="plus-circle" size={20} color="#fff" />
-          <Text style={styles.addButtonText}> Adicionar Nova Vacina</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.exitButton}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.exitButton} onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
           <Text style={styles.exitButtonText}> Sair</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Modal de Exclusão */}
-      <DeleteVaccineModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onConfirm={confirmarExclusao}
-        vacina={vacinaSelecionada}
-        paciente={patientName}
-      />
     </SafeAreaView>
   );
 }

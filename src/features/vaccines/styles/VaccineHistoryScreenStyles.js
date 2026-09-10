@@ -153,6 +153,44 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff'
 },
 
+  centered: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  errorText: {
+    color: '#d32f2f',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  emptyText: {
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  retryButton: {
+    backgroundColor: '#4caf50',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginBottom: 8,
+  },
+  statusText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
 });
 
 export default styles;

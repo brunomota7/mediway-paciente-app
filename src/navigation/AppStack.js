@@ -17,8 +17,6 @@ import NotificationScreen from '../features/notifications/screens/NotificationSc
 import BloodTypeScreen from '../features/profile/screens/BloodTypeScreen';
 import UserProfileScreen from '../features/profile/screens/UserProfileScreen';
 import TreatmentListScreen from '../features/treatments/screens/TreatmentListScreen';
-import AddVaccineScreen from '../features/vaccines/screens/AddVaccineScreen';
-import EditVaccineScreen from '../features/vaccines/screens/EditVaccineScreen';
 import VaccineHistoryScreen from '../features/vaccines/screens/VaccineHistoryScreen';
 
 import CEMListScreen from '../features/cem/screens/CEMListScreen';
@@ -56,8 +54,6 @@ export default function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Home">
       <Stack.Screen name="Home" component={HomeDrawer} />
-      <Stack.Screen name="Adicionar Vacina" component={AddVaccineScreen} />
-      <Stack.Screen name="Editar Vacina" component={EditVaccineScreen} />
       <Stack.Screen name="Tratamentos" component={TreatmentListScreen} />
       <Stack.Screen name="Consultas" component={ConsultationListScreen} />
       <Stack.Screen name="Exames" component={ExamListScreen} />

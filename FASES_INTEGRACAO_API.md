@@ -25,7 +25,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | 2 | Perfil do paciente e onboarding | ✅ Concluída (2026-09-10) |
 | 3 | Consultas e exames (leitura) + dashboard | ✅ Concluída (2026-09-10) |
 | 4 | Medicações e Caixa (CEM) | ✅ Concluída (2026-09-10) |
-| 5 | Vacinas (leitura) | ⬜ Não iniciada |
+| 5 | Vacinas (leitura) | ✅ Concluída (2026-09-10) |
 | 6 | Ajuste de escopo / lacunas | ⬜ Não iniciada |
 | 7 | Robustez, QA e fechamento | ⬜ Não iniciada |
 
@@ -136,8 +136,8 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 
 | # | Método / Rota | Acesso | (→ resposta) | Consumido em | Fase | Status |
 |---|---|---|---|---|---|---|
-| V1 | `GET /vaccine/me` | `SCOPE_PACIENTE` | → `VaccineResponseDTO[]` | `VaccineHistoryScreen` | 5 | `[ ]` |
-| V2 | `GET /vaccine/{vaccineId}` | `SCOPE_PACIENTE` | → `VaccineResponseDTO` (tratar **500**=inexistente, B2) | detalhe de vacina (opcional) | 5 | `[ ]` |
+| V1 | `GET /vaccine/me` | `SCOPE_PACIENTE` | → `VaccineResponseDTO[]` | `useVaccines` → `VaccineHistoryScreen` | 5 | `[x]` |
+| V2 | `GET /vaccine/{vaccineId}` | `SCOPE_PACIENTE` | → `VaccineResponseDTO` (500/404 → `null`, B2) | `vaccineApi.getById` (sem tela dedicada) | 5 | `[x]` |
 
 `VaccineResponseDTO`: `{ vaccineId, nome, tipoDose, dataVacinou, lote, dataFabricacao, proximaDose, status, patientId }`.
 
@@ -167,7 +167,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 **Fase 2 – Perfil:** `[x]` P1 `[x]` P2 `[x]` P3
 **Fase 3 – Consultas/Exames:** `[x]` C1 `[x]` C2 `[x]` E1 `[x]` E2
 **Fase 4 – Medicações/Caixa:** `[x]` M1 `[x]` M2 `[x]` M3 `[x]` M4 `[x]` M5 `[x]` X1 `[x]` X2 `[x]` X3 `[x]` X4 `[x]` X5
-**Fase 5 – Vacinas:** `[ ]` V1 `[ ]` V2
+**Fase 5 – Vacinas:** `[x]` V1 `[x]` V2
 **Fase 6 – Ajuste de escopo:** reuso de A3/A4/A5 na troca de senha logado
 
 Total: **5 globais + 17 do paciente = 22 endpoints** integrados ao final da Fase 5.
@@ -359,20 +359,22 @@ Fora de `src/`: `App.js` reescrito (SafeAreaProvider → QueryClientProvider →
 
 ## 10. Fase 5 — Vacinas (somente leitura)
 
+**Status: ✅ Concluída (2026-09-10)** · commit na branch `feat/fase-5-vacinas`
+
 **Objetivo:** carteira de vacinas real, sem escrita (L1).
 
 **Endpoints:** V1 `GET /vaccine/me` · V2 `GET /vaccine/{id}`
 
 **Tarefas**
-- [ ] `api/endpoints/vaccineApi.js`: `listMine`, `getById` (tratar **500** como "não encontrada", B2).
-- [ ] `hooks/useVaccines.js`: query `['vaccines','me']`.
-- [ ] Adapter: mapear `tipoDose` e `status` enum→label; datas ISO→BR.
-- [ ] `VaccineHistoryScreen`: dados reais; **remover** botões "Adicionar Nova Vacina", "Editar", "Excluir".
-- [ ] Tirar da navegação `AddVaccineScreen`, `EditVaccineScreen`, `DeleteVaccineModal` (ou flag desabilitada).
+- [x] `api/endpoints/vaccineApi.js`: `listMine`, `getById` (500/404 → `null`, B2) + `vaccineFromApi` (traduz `tipoDose`/`status`, datas ISO→BR).
+- [x] `hooks/useVaccines.js`: query `['vaccines','me']`, `enabled` pela sessão.
+- [x] `VaccineHistoryScreen` reescrito: `useVaccines`, badge de status, loading/erro/vazio + pull-to-refresh; **sem** botões "Adicionar/Editar/Excluir". Cabeçalho com `user`.
+- [x] `AddVaccineScreen`, `EditVaccineScreen`, `DeleteVaccineModal` (+ styles) **deletados** e removidos do `AppStack` (rotas "Adicionar Vacina" / "Editar Vacina").
+- [x] Testes: `vaccineApi.test.js` (adapter + 500/404 → null). `npm test` → **81 verdes**. Build: `npx expo export --platform android` sem erros.
 
 **Critérios de aceite**
-- Carteira lista as vacinas do paciente; nenhum caminho de escrita.
-- ID inexistente não derruba a tela (500 tratado).
+- [x] A carteira lista `GET /vaccine/me`; nenhum caminho de UI escreve vacina.
+- [x] `getById` de id inexistente devolve `null` (500 e 404 tratados) sem derrubar a tela.
 
 ---
 
