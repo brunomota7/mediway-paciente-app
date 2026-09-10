@@ -161,6 +161,56 @@ const styles = StyleSheet.create({
     color: '#d32f2f',
     fontSize: 16,
   },
+
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  emptyText: {
+    color: '#666',
+    textAlign: 'center',
+    marginVertical: 12,
+  },
+  boxField: {
+    fontSize: 13,
+    color: '#888',
+    marginTop: 8,
+  },
+  boxValue: {
+    fontSize: 15,
+    color: '#333',
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#4caf50',
+    marginTop: 12,
+  },
+  secondaryButtonText: {
+    color: '#2e7d32',
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  errorText: {
+    color: '#d32f2f',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#81c784',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
 });
 
 export default styles;

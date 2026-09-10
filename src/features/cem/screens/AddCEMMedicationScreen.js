@@ -1,211 +1,67 @@
 // 📁 src/features/cem/screens/AddCEMMedicationScreen.js
+//
+// Adiciona um medicamento à caixa existente (M3). Sem auto-preenchimento
+// farmacológico (era mock e não há endpoint).
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker'; // usado como seletor
 import { useState } from 'react';
 import {
-  Alert,
   SafeAreaView,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import styles from '../styles/AddCEMMedicationScreenStyles';
+import MedicationForm from '../../medications/components/MedicationForm';
+import { useMedicineBox } from '../../../hooks/useMedicineBox';
+import { useCreateMedication } from '../../../hooks/useMedications';
 
-/**
- * Tela para adicionar medicamento manualmente a uma gaveta da CEM
- * Padrão MVVM | Visual clínico e acessível
- */
 export default function AddCEMMedicationScreen({ route, navigation }) {
-  const { posicao, paciente, serie } = route.params;
+  const initialGaveta = route?.params?.gaveta ?? '';
+  const { data: box } = useMedicineBox();
+  const create = useCreateMedication();
+  const [error, setError] = useState('');
 
-  const [tipo, setTipo] = useState('');
-  const [nomeMedicamento, setNomeMedicamento] = useState('');
-  const [generico, setGenerico] = useState('');
-  const [similar, setSimilar] = useState('');
-  const [referencia, setReferencia] = useState('');
-  const [manipulado, setManipulado] = useState('');
-  const [concentracao, setConcentracao] = useState('');
-  const [quantidadeDose, setQuantidadeDose] = useState('');
-  const [estoque, setEstoque] = useState('');
-
-  const getCorPaciente = (id) => {
-    return id === 1 ? '#2196f3' : id === 2 ? '#4caf50' : '#ffeb3b';
-  };
-
-  const handleSalvar = () => {
-    if (!tipo || !nomeMedicamento || !estoque) {
-      Alert.alert('Erro', 'Preencha todos os campos obrigatórios.');
+  const handleSubmit = async (payload) => {
+    if (!box?.id) {
+      setError('Cadastre a caixa antes de adicionar medicamentos.');
       return;
     }
-
-    // Dados simulados enviados para a tela anterior
-    navigation.navigate({
-      name: 'Visualizar Medicamentos CEM',
-      params: {
-        novoMedicamento: {
-          pos: posicao,
-          paciente,
-          medicamento: nomeMedicamento
-        }
-      },
-      merge: true
-    });
+    setError('');
+    try {
+      await create.mutateAsync({ ...payload, medicineBoxId: box.id });
+      navigation.goBack();
+    } catch (err) {
+      setError(err?.message || 'Não foi possível salvar o medicamento.');
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* 🔹 Cabeçalho */}
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          {/* <MaterialCommunityIcons name="pill" size={24} color={getCorPaciente(paciente)} /> */}
-          <Text style={styles.title}>Adicionar Novo Medicamento na CEM</Text>
-          <Text style={styles.subtitle}>
-            Paciente:
-            <Text style={{ fontWeight: 'bold', color: getCorPaciente(paciente) }}>
-              Paciente {paciente}
-            </Text>
-          </Text>
-          <Text style={styles.subtitle}>Série da CEM: {serie} | Gaveta: {posicao}</Text>
+          <Text style={styles.title}>Adicionar Medicamento na CEM</Text>
+          {box?.numeroSerie ? (
+            <Text style={styles.subtitle}>Série da CEM: {box.numeroSerie}</Text>
+          ) : null}
         </View>
 
-        {/* 🔹 Tipo de Medicamento */}
-        <Text style={styles.label}>Tipo de Medicamento</Text>
-        <View style={styles.pickerContainer}>
-          <Picker selectedValue={tipo} onValueChange={(value) => setTipo(value)} style={styles.picker}>
-            <Picker.Item label="Selecione o tipo" value="" />
-            <Picker.Item label="Referência" value="Referência" />
-            <Picker.Item label="Genérico" value="Genérico" />
-            <Picker.Item label="Similar" value="Similar" />
-            <Picker.Item label="Manipulado" value="Manipulado" />
-          </Picker>
-        </View>
-
-        {/* 🔹 Nome do Medicamento */}
-        <Text style={styles.label}>Nome do Medicamento</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Digite ou selecione o nome do medicamento"
-          value={nomeMedicamento}
-          onChangeText={(value) => {
-            setNomeMedicamento(value);
-            // Simulação de preenchimento automático:
-            switch (value.toLowerCase()) {
-              case 'dipirona':
-                setGenerico('Dipirona Sódica');
-                setSimilar('Não Informado');
-                setReferencia('Dipirona');
-                setManipulado('');
-                setConcentracao('500mg');
-                setQuantidadeDose('1 comprimido');
-                break;
-              case 'novalgina':
-                setGenerico('Dipirona');
-                setSimilar('Dipimed');
-                setReferencia('Novalgina');
-                setManipulado('Cápsulas analgésicas manipuladas');
-                setConcentracao('500mg');
-                setQuantidadeDose('1 comprimido');
-                break;
-              case 'losec':
-                setGenerico('Omeprazol');
-                setSimilar('Dipimed');
-                setReferencia('Losec');
-                setManipulado('Cápsulas analgésicas manipuladas');
-                setConcentracao('500mg');
-                setQuantidadeDose('1 comprimido');
-                break;
-              case 'paracetamol':
-                setGenerico('Dipirona');
-                setSimilar('Dipimed');
-                setReferencia('Paracetamol');
-                setManipulado('Cápsulas analgésicas manipuladas');
-                setConcentracao('500mg');
-                setQuantidadeDose('1 comprimido');
-                break;
-              case 'glucoformin':
-                setGenerico('Dipirona');
-                setSimilar('Dipimed');
-                setReferencia('Glucoformin');
-                setManipulado('Cápsulas analgésicas manipuladas');
-                setConcentracao('500mg');
-                setQuantidadeDose('1 comprimido');
-                break;
-              case 'renitec':
-                setGenerico('Dipirona');
-                setSimilar('Dipimed');
-                setReferencia('Renitec');
-                setManipulado('Cápsulas analgésicas manipuladas');
-                setConcentracao('500mg');
-                setQuantidadeDose('1 comprimido');
-                break;
-              case 'nizoral':
-                setGenerico('Dipirona');
-                setSimilar('Dipimed');
-                setReferencia('Nizoral');
-                setManipulado('Cápsulas analgésicas manipuladas');
-                setConcentracao('500mg');
-                setQuantidadeDose('1 comprimido');
-                break;
-              case 'amoxil':
-                setGenerico('Dipirona');
-                setSimilar('Dipimed');
-                setReferencia('Amoxil');
-                setManipulado('Cápsulas analgésicas manipuladas');
-                setConcentracao('500mg');
-                setQuantidadeDose('1 comprimido');
-                break;
-              default:
-                // Limpa campos caso nome não reconhecido
-                setGenerico('');
-                setSimilar('');
-                setReferencia('');
-                setManipulado('');
-                setConcentracao('');
-                setQuantidadeDose('');
-                break;
-            }
-          }}
+        <MedicationForm
+          initialGaveta={initialGaveta}
+          submitting={create.isPending}
+          disabled={!box?.id}
+          externalError={error}
+          submitLabel="Salvar Medicamento na CEM"
+          onSubmit={handleSubmit}
         />
 
-        {/* 🔹 Dados Farmacológicos | Exibição de dados preenchidos */}
-        {nomeMedicamento !== '' && (
-          <>
-            {generico ? <Text style={styles.detail}>Genérico: {generico}</Text> : null}
-            {similar ? <Text style={styles.detail}>Similar: {similar}</Text> : null}
-            {referencia ? <Text style={styles.detail}>Referência: {referencia}</Text> : null}
-            {manipulado ? <Text style={styles.detail}>Manipulado: {manipulado}</Text> : null}
-            {concentracao ? <Text style={styles.detail}>Concentração: {concentracao}</Text> : null}
-            {quantidadeDose ? <Text style={styles.detail}>Qtd Dose: {quantidadeDose}</Text> : null}
-          </>
-        )}
-
-        {/* 🔹Quantidade (Estoque a ser inserido) */}
-        <Text style={styles.label}>Quantidade a ser colocada na CEM</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: 10"
-          keyboardType="numeric"
-          value={estoque}
-          onChangeText={setEstoque}
-        />
-
-        {/* 🔹 Botões */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSalvar}>
-          <MaterialCommunityIcons name="content-save" size={20} color="#fff" />
-          <Text style={styles.saveButtonText}>Salvar Medicamento na CEM</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
-          <Text style={styles.cancelButtonText}>Voltar à Visualização da CEM</Text>
+          <Text style={styles.cancelButtonText}>Voltar</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

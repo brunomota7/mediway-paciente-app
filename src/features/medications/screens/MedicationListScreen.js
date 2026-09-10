@@ -1,184 +1,69 @@
 // 📁 src/features/medications/screens/MedicationListScreen.js
+//
+// Lista de medicações do paciente. Dados de GET /medications/me (useMedications).
+// Ações suportadas pela API: adicionar (à caixa existente), suspender/reativar,
+// excluir. Não há edição completa (L4).
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { TabView } from '@rneui/themed';
 import { useState } from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native'; // ⬅️ Adicionado SafeAreaView
+import { ActivityIndicator, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+
 import MedicationTabs from '../components/MedicationTabs';
 import styles from '../styles/MedicationListScreenStyles';
 import AddMedicationModal from './AddMedicationModal';
 import EditMedicationModal from './EditMedicationModal';
+import { useAuth } from '../../../auth/useAuth';
+import { useMedications } from '../../../hooks/useMedications';
+import { useMedicineBox } from '../../../hooks/useMedicineBox';
 
-/**
- * Tela de listagem de medicamentos do paciente
- * Segue padrão MVVM, com visual Mediway
- */
 export default function MedicationListScreen({ navigation }) {
-  const [index, setIndex] = useState(0);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [selectedMedication, setSelectedMedication] = useState(null);
+  const { user } = useAuth();
+  const patientName = user?.name || 'Paciente';
 
-  const [medications, setMedications] = useState([
-    {
-      Id11: 1,
-      Nome: 'Dipirona',
-      Tipo: 'Genérico',
-      NomeReferencia: 'Anador',
-      Descricao: 'Analgésico e antitérmico',
-      Concentração: '500mg',
-      Quantidade: '1 comprimido',
-      Dia: 'Segunda, Quarta, Sexta',
-      Hora: '08:00',
-      Gaveta: 'A1',
-      Estoque: 10,
-      Situacao: 0,
-    },
-    {
-      Id11: 2,
-      Nome: 'Omeprazol',
-      Tipo: 'Referência',
-      NomeReferencia: 'Losec',
-      Descricao: 'Redução da acidez estomacal',
-      Concentração: '20mg',
-      Quantidade: '1 cápsula',
-      Dia: 'Todos os dias',
-      Hora: 'Antes do café',
-      Gaveta: 'B2',
-      Estoque: 5,
-      Situacao: 1,
-      DataSuspensao: '2025-06-30',
-    },
-    {
-      Id11: 3,
-      Nome: 'Paracetamol',
-      Tipo: 'Genérico',
-      NomeReferencia: 'Tylenol',
-      Descricao: 'Analgésico e antitérmico',
-      Concentração: '750mg',
-      Quantidade: '1 comprimido',
-      Dia: 'Terça e Quinta',
-      Hora: '09:00',
-      Gaveta: 'A2',
-      Estoque: 8,
-      Situacao: 0,
-    },
-    {
-      Id11: 4,
-      Nome: 'Loratadina',
-      Tipo: 'Referência',
-      NomeReferencia: 'Claritin',
-      Descricao: 'Antialérgico',
-      Concentração: '10mg',
-      Quantidade: '1 comprimido',
-      Dia: 'Todos os dias',
-      Hora: '10:00',
-      Gaveta: 'C1',
-      Estoque: 15,
-      Situacao: 0,
-    },
-    {
-      Id11: 5,
-      Nome: 'Metformina',
-      Tipo: 'Genérico',
-      NomeReferencia: 'Glucoformin',
-      Descricao: 'Controle de glicemia',
-      Concentração: '500mg',
-      Quantidade: '1 comprimido',
-      Dia: 'Todos os dias',
-      Hora: 'Após o almoço',
-      Gaveta: 'B1',
-      Estoque: 20,
-      Situacao: 0,
-    },
-    {
-      Id11: 6,
-      Nome: 'Captopril',
-      Tipo: 'Genérico',
-      NomeReferencia: 'Capoten',
-      Descricao: 'Antihipertensivo',
-      Concentração: '25mg',
-      Quantidade: '1 comprimido',
-      Dia: 'Segunda a Sábado',
-      Hora: '07:00',
-      Gaveta: 'D1',
-      Estoque: 12,
-      Situacao: 0,
-    },
-    {
-      Id11: 7,
-      Nome: 'Amoxicilina',
-      Tipo: 'Referência',
-      NomeReferencia: 'Amoxil',
-      Descricao: 'Antibiótico de largo espectro',
-      Concentração: '500mg',
-      Quantidade: '1 cápsula',
-      Dia: 'Todos os dias',
-      Hora: '12:00',
-      Gaveta: 'C2',
-      Estoque: 6,
-      Situacao: 1,
-      DataSuspensao: '2025-07-01',
-    },
-    {
-      Id11: 8,
-      Nome: 'Ranitidina',
-      Tipo: 'Genérico',
-      NomeReferencia: 'Antak',
-      Descricao: 'Tratamento de refluxo ácido',
-      Concentração: '150mg',
-      Quantidade: '1 comprimido',
-      Dia: 'Terça, Quinta, Sábado',
-      Hora: 'Antes de dormir',
-      Gaveta: 'E1',
-      Estoque: 10,
-      Situacao: 2,
-      DataSuspensao: '2025-07-01',
-    },
-  ]);
+  const { data: medications = [], isLoading, isError, error, refetch } = useMedications();
+  const { data: box } = useMedicineBox();
 
-  // Salvar novo medicamento
-  const handleSaveMedication = (novaMed) => {
-    const novoMedId = { ...novaMed, Id11: Date.now() };
-    setMedications((prev) => [...prev, novoMedId]);
-    setModalVisible(false);
-  };
+  const [addVisible, setAddVisible] = useState(false);
+  const [editVisible, setEditVisible] = useState(false);
+  const [selected, setSelected] = useState(null);
 
-  // Atualizar medicamento existente
-  const handleEditMedication = (updated) => {
-    setMedications((prev) =>
-      prev.map((m) => (m.Id11 === updated.Id11 ? updated : m))
-    );
-    setEditModalVisible(false);
-    setSelectedMedication(null);
+  const openEdit = (m) => {
+    setSelected(m);
+    setEditVisible(true);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Cabeçalho */}
         <View style={styles.header}>
           <View style={styles.titleView}>
             <MaterialCommunityIcons name="pill" size={24} color="#4caf50" />
             <Text style={styles.title}>Medicamentos</Text>
           </View>
-          <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+          <Text style={styles.subtitle}>{patientName}</Text>
         </View>
 
-        {/* Abas + Lista (rolável apenas essa parte) */}
         <View style={styles.contentContainer}>
-          <MedicationTabs
-            medicamentos={medications}
-            onEdit={(m) => {
-              setSelectedMedication(m);
-              setEditModalVisible(true);
-            }}
-          />
+          {isLoading ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="large" color="#2e7d32" />
+            </View>
+          ) : isError ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+              <Text style={{ color: '#d32f2f', textAlign: 'center', marginBottom: 12 }}>
+                {error?.message || 'Não foi possível carregar os medicamentos.'}
+              </Text>
+              <TouchableOpacity style={styles.addButton} onPress={() => refetch()}>
+                <Text style={styles.addButtonText}>Tentar novamente</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <MedicationTabs medicamentos={medications} onEdit={openEdit} />
+          )}
         </View>
 
-        {/* Botões inferiores (fixos) */}
         <View style={styles.areaBtnInferiores}>
-          <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+          <TouchableOpacity style={styles.addButton} onPress={() => setAddVisible(true)}>
             <MaterialCommunityIcons name="plus-circle-outline" size={20} color="#fff" />
             <Text style={styles.addButtonText}>Adicionar Novo Medicamento</Text>
           </TouchableOpacity>
@@ -189,22 +74,20 @@ export default function MedicationListScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Modais */}
         <AddMedicationModal
-          visible={modalVisible}
-          onClose={() => setModalVisible(false)}
-          onSave={handleSaveMedication}
+          visible={addVisible}
+          onClose={() => setAddVisible(false)}
+          medicineBoxId={box?.id ?? null}
         />
 
-        {selectedMedication && (
+        {selected && (
           <EditMedicationModal
-            visible={editModalVisible}
+            visible={editVisible}
             onClose={() => {
-              setEditModalVisible(false);
-              setSelectedMedication(null);
+              setEditVisible(false);
+              setSelected(null);
             }}
-            onSave={handleEditMedication}
-            medicamento={selectedMedication}
+            medicamento={selected}
           />
         )}
       </View>

@@ -21,6 +21,7 @@ import { icons } from '../../../const/icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useConsultations } from '../../../hooks/useConsultations';
 import { useExams } from '../../../hooks/useExams';
+import { useMedications } from '../../../hooks/useMedications';
 import { isUpcomingStatus } from '../../../lib/statusColors';
 
 /** Conta itens em aberto x realizados e devolve subtítulo + progresso. */
@@ -44,8 +45,19 @@ export default function HomeScreen({ navigation }) {
 
   const consultationsQuery = useConsultations();
   const examsQuery = useExams();
+  const medicationsQuery = useMedications();
   const consultasResumo = summarize(consultationsQuery.data ?? [], consultationsQuery.isLoading);
   const examesResumo = summarize(examsQuery.data ?? [], examsQuery.isLoading);
+
+  const meds = medicationsQuery.data ?? [];
+  const medsAtivos = meds.filter((m) => m.status === 'ATIVO').length;
+  const medsSuspensos = meds.length - medsAtivos;
+  const prescricaoResumo = {
+    subtitle: medicationsQuery.isLoading
+      ? 'Carregando…'
+      : `Ativos: ${medsAtivos} | Suspensos: ${medsSuspensos}`,
+    progress: meds.length > 0 ? Math.round((medsAtivos / meds.length) * 100) : 0,
+  };
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -132,7 +144,8 @@ export default function HomeScreen({ navigation }) {
           <DashboardCard
             icon={icons.prescricaoMedica}
             title="Prescrição Médica"
-            subtitle="Ver em Medicamentos"
+            subtitle={prescricaoResumo.subtitle}
+            progress={prescricaoResumo.progress}
           />
         </View>
 

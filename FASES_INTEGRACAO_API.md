@@ -24,7 +24,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | 1 | Autenticação e sessão | ✅ Concluída (2026-09-10) |
 | 2 | Perfil do paciente e onboarding | ✅ Concluída (2026-09-10) |
 | 3 | Consultas e exames (leitura) + dashboard | ✅ Concluída (2026-09-10) |
-| 4 | Medicações e Caixa (CEM) | ⬜ Não iniciada |
+| 4 | Medicações e Caixa (CEM) | ✅ Concluída (2026-09-10) |
 | 5 | Vacinas (leitura) | ⬜ Não iniciada |
 | 6 | Ajuste de escopo / lacunas | ⬜ Não iniciada |
 | 7 | Robustez, QA e fechamento | ⬜ Não iniciada |
@@ -110,11 +110,11 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 
 | # | Método / Rota | Acesso | Corpo / Query (→ resposta) | Consumido em | Fase | Status |
 |---|---|---|---|---|---|---|
-| M1 | `GET /medications/me` | `SCOPE_PACIENTE` | → `MedicationResponseDTO[]` | `MedicationListScreen` + tabs | 4 | `[ ]` |
-| M2 | `GET /medications/{medicationId}` | `SCOPE_PACIENTE` | → `MedicationResponseDTO` | detalhe / `EditMedicationModal` | 4 | `[ ]` |
-| M3 | `POST /medications/user/{patientUserId}` | `SCOPE_PACIENTE` | `{ nome*, tipo*, nomeReferencia?, descricao?, concentracao?, quantidade?, dias*[], hora*, gaveta?, estoque*(≥0), status*, medicineBoxId* }` → `201` sem corpo | `AddMedicationModal`, `AddCEMMedicationScreen` | 4 | `[ ]` |
-| M4 | `PATCH /medications/{medicationId}/status?status=` | `SCOPE_PACIENTE` | query `status` ∈ `ATIVO`/`SUSPENSO` → `204` | `EditMedicationModal`, toggle na lista | 4 | `[ ]` |
-| M5 | `DELETE /medications/{medicationId}` | `SCOPE_PACIENTE` | → `204` | `EditMedicationModal` | 4 | `[ ]` |
+| M1 | `GET /medications/me` | `SCOPE_PACIENTE` | → `MedicationResponseDTO[]` | `useMedications` → `MedicationListScreen` + tabs, dashboard | 4 | `[x]` |
+| M2 | `GET /medications/{medicationId}` | `SCOPE_PACIENTE` | → `MedicationResponseDTO` | `medicationApi.getById` (sem tela dedicada) | 4 | `[x]` |
+| M3 | `POST /medications/user/{patientUserId}` | `SCOPE_PACIENTE` | `{ nome*, tipo*, nomeReferencia?, descricao?, concentracao?, quantidade?, dias*[], hora*, gaveta?, estoque*(≥0), status*, medicineBoxId* }` → `201` sem corpo | `MedicationForm` → `AddMedicationModal`, `AddCEMMedicationScreen` | 4 | `[x]` |
+| M4 | `PATCH /medications/{medicationId}/status?status=` | `SCOPE_PACIENTE` | query `status` ∈ `ATIVO`/`SUSPENSO` → `204` | `EditMedicationModal`, `EditCEMMedicationScreen` | 4 | `[x]` |
+| M5 | `DELETE /medications/{medicationId}` | `SCOPE_PACIENTE` | → `204` | `EditMedicationModal` | 4 | `[x]` |
 
 `MedicationResponseDTO`: `{ medicationId, nome, tipo, nomeReferencia, descricao, concentracao, quantidade, dias[], hora, gaveta, estoque, status }`.
 > `medicineBoxId` (obrigatório em M3) é o campo `medicineBoxId` do `MedicineBoxResponseDTO` retornado por `GET /medicine-box/me`.
@@ -123,11 +123,11 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 
 | # | Método / Rota | Acesso | Corpo / Query (→ resposta) | Consumido em | Fase | Status |
 |---|---|---|---|---|---|---|
-| X1 | `GET /medicine-box/me` | `SCOPE_PACIENTE` | → `MedicineBoxResponseDTO` (ou erro se não tiver caixa) | `CEMListScreen`→"Minha Caixa", `ViewCEMMedicationsScreen` | 4 | `[ ]` |
-| X2 | `POST /medicine-box/register/{patientId}` | `SCOPE_PACIENTE` | `{ numeroSerie*, nome?, gavetas*:[{ nome*, medicamentos*:[{ nome*, tipo*, dias*[], hora*, estoque*, ... }] }] }` → `201` `MedicineBoxResponseDTO` (**409** se já existe / série duplicada) | fluxo "cadastrar minha caixa" | 4 | `[ ]` |
-| X3 | `PUT /medicine-box/me?nome=` | `SCOPE_PACIENTE` | query `nome` → `204` | renomear caixa | 4 | `[ ]` |
-| X4 | `DELETE /medicine-box/me/medication/{medicationId}` | `SCOPE_PACIENTE` | → `204` | remover medicamento da caixa | 4 | `[ ]` |
-| X5 | `DELETE /medicine-box/me/gaveta?gaveta=` | `SCOPE_PACIENTE` | query `gaveta` → `204` | esvaziar gaveta | 4 | `[ ]` |
+| X1 | `GET /medicine-box/me` | `SCOPE_PACIENTE` | → `MedicineBoxResponseDTO` (404 → `null`, tratado como "sem caixa") | `useMedicineBox` → `CEMListScreen`, `ViewCEMMedicationsScreen`, `AddMedicationModal` | 4 | `[x]` |
+| X2 | `POST /medicine-box/register/{patientId}` | `SCOPE_PACIENTE` | `{ numeroSerie*, nome?, gavetas*:[{ nome*, medicamentos*:[{ nome*, tipo*, dias*[], hora*, estoque*, ... }] }] }` → `201` `MedicineBoxResponseDTO` (**409** se já existe / série duplicada) | `AddCEMModal` (cadastro da caixa + 1ª gaveta/medicamento) | 4 | `[x]` |
+| X3 | `PUT /medicine-box/me?nome=` | `SCOPE_PACIENTE` | query `nome` → `204` | `RenameBoxModal` no `CEMListScreen` | 4 | `[x]` |
+| X4 | `DELETE /medicine-box/me/medication/{medicationId}` | `SCOPE_PACIENTE` | → `204` | `EditCEMMedicationScreen` (excluir da caixa) | 4 | `[x]` |
+| X5 | `DELETE /medicine-box/me/gaveta?gaveta=` | `SCOPE_PACIENTE` | query `gaveta` → `204` | `ViewCEMMedicationsScreen` (esvaziar gaveta) | 4 | `[x]` |
 
 `MedicineBoxResponseDTO`: `{ medicineBoxId, nome, numeroSerie, externalId, gavetas:[{ nome, medicamentos:[MedicationResponseDTO] }] }`.
 > **1 caixa por paciente.** `numeroSerie` é digitado pelo usuário (não há "detecção via rede"). `externalId` (UUID) é o único ID gerado pela API.
@@ -166,7 +166,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 **Fase 1 – Auth (global):** `[x]` A1 `[x]` A2 `[x]` A3 `[x]` A4 `[x]` A5
 **Fase 2 – Perfil:** `[x]` P1 `[x]` P2 `[x]` P3
 **Fase 3 – Consultas/Exames:** `[x]` C1 `[x]` C2 `[x]` E1 `[x]` E2
-**Fase 4 – Medicações/Caixa:** `[ ]` M1 `[ ]` M2 `[ ]` M3 `[ ]` M4 `[ ]` M5 `[ ]` X1 `[ ]` X2 `[ ]` X3 `[ ]` X4 `[ ]` X5
+**Fase 4 – Medicações/Caixa:** `[x]` M1 `[x]` M2 `[x]` M3 `[x]` M4 `[x]` M5 `[x]` X1 `[x]` X2 `[x]` X3 `[x]` X4 `[x]` X5
 **Fase 5 – Vacinas:** `[ ]` V1 `[ ]` V2
 **Fase 6 – Ajuste de escopo:** reuso de A3/A4/A5 na troca de senha logado
 
@@ -325,31 +325,35 @@ Fora de `src/`: `App.js` reescrito (SafeAreaProvider → QueryClientProvider →
 
 ## 9. Fase 4 — Medicações e Caixa de medicamentos (CEM)
 
+**Status: ✅ Concluída (2026-09-10)** · commit na branch `feat/fase-4-medicacoes-cem`
+
 **Objetivo:** CRUD de medicação suportado pela API e gestão da caixa única do paciente.
 
 **Endpoints:** M1–M5 · X1–X5
 
 **Tarefas — Caixa**
-- [ ] `api/endpoints/medicineBoxApi.js`: `getMine`, `register`, `rename`, `deleteMedication`, `clearGaveta`.
-- [ ] `hooks/useMedicineBox.js`: query `['medicineBox','me']`; tratar "sem caixa" como estado vazio (não erro fatal).
-- [ ] Redesenhar `CEMListScreen` → **"Minha Caixa"**: se não há caixa, CTA "Cadastrar caixa"; se há, mostra `nome`, `numeroSerie`, `externalId` e as gavetas. Remover coluna "pacientes" e "detecção via rede" (L3).
-- [ ] Fluxo de cadastro da caixa → `register` com `numeroSerie` digitado + gavetas + medicamentos (payload aninhado X2); tratar **409** distinguindo "já possui caixa" de "série duplicada" (B4).
-- [ ] `ViewCEMMedicationsScreen`: renderizar gavetas/medicamentos reais de `getMine` (não a matriz 3×3 fixa).
-- [ ] `AddCEMModal`: passa a ser "cadastrar caixa" ou "adicionar gaveta/medicamento", conforme o caso.
+- [x] `api/endpoints/medicineBoxApi.js`: `getMine` (404 → `null`), `register`, `rename`, `deleteMedication`, `clearGaveta` + `medicineBoxFromApi` (achata gavetas → `medicationFromApi`, calcula `medicationCount`).
+- [x] `hooks/useMedicineBox.js`: query `['medicineBox','me']` + `useRegisterMedicineBox`, `useRenameMedicineBox`, `useDeleteBoxMedication`, `useClearGaveta` (invalidam também `['medications','me']`). "Sem caixa" = `data === null`.
+- [x] `CEMListScreen` → **"Minha Caixa"**: sem caixa → card + CTA "Cadastrar caixa"; com caixa → `nome`, `numeroSerie`, `externalId`, contagem de gavetas/medicamentos, "Ver medicamentos", renomear. Removidos lista de CEMs, coluna "pacientes" e "detecção via rede" (L3).
+- [x] `AddCEMModal` = cadastro da caixa: `numeroSerie` (digitado) + `nome?` + 1ª gaveta/medicamento via `MedicationForm` → `register` (payload aninhado X2). `409` distingue "já possui caixa" de "série duplicada" (B4).
+- [x] `ViewCEMMedicationsScreen`: gavetas/medicamentos reais de `useMedicineBox` (matriz 3×3 e cores por paciente removidas); por gaveta "Esvaziar" (X5); toque no medicamento → `EditCEMMedicationScreen`; "Adicionar medicamento" → `AddCEMMedicationScreen`.
 
 **Tarefas — Medicações**
-- [ ] `api/endpoints/medicationApi.js`: `listMine`, `getById`, `create`, `setStatus`, `remove`.
-- [ ] `hooks/useMedications.js`: query `['medications','me']`; mutations invalidam `['medications','me']` **e** `['medicineBox','me']`.
-- [ ] `MedicationListScreen` + `MedicationTabs`: dados reais; aba por `status` (`ATIVO`/`SUSPENSO`).
-- [ ] `AddMedicationModal` → `create` (`POST /medications/user/{patientUserId}` com `patientUserId` = UUID do paciente logado e `medicineBoxId` da caixa). Corrigir bugs do form atual (campo "Nome de Referência" hoje amarrado a `Tipo`). `dias` como array de enums; `hora` `HH:mm`; `estoque` inteiro ≥ 0.
-- [ ] `EditMedicationModal` → só `setStatus` (ATIVO/SUSPENSO) e `remove` (L4). Para "editar dados", oferecer excluir + recriar (ou aguardar `PUT /medications/{id}` do backend).
-- [ ] `AddCEMMedicationScreen` / `EditCEMMedicationScreen`: usar `create` / `setStatus` / `deleteMedication` / `clearGaveta`. Remover o auto-preenchimento farmacológico mockado.
+- [x] `api/endpoints/medicationApi.js`: `listMine`, `getById`, `create`, `setStatus` (query param), `remove` + `medicationFromApi` (traduz `tipo`/`status`, `diasLabel`).
+- [x] `hooks/useMedications.js`: query `['medications','me']` + `useCreateMedication` (injeta `patientUserId` = `user.id`), `useSetMedicationStatus`, `useRemoveMedication` — todas invalidam `['medications','me']` **e** `['medicineBox','me']`.
+- [x] `MedicationListScreen` + `MedicationTabs`: dados reais; abas `ATIVO`/`SUSPENSO`; loading/erro. Mock removido.
+- [x] `components/MedicationForm.js` (+ `WeekDayPicker`): form único (nome, tipo Picker, referência, descrição, concentração, quantidade, **dias como chips de enum**, **hora `HH:mm`** via `toIsoTime`, gaveta, **estoque inteiro ≥ 0**), reusado por `AddMedicationModal` e `AddCEMMedicationScreen`. Bug do campo "Nome de referência" (amarrado a `Tipo`) corrigido.
+- [x] `EditMedicationModal` reescrito: dados somente leitura + Suspender/Reativar (M4) + Excluir (M5). Aviso de que não há edição completa (L4).
+- [x] `AddCEMMedicationScreen`: `MedicationForm` + `useCreateMedication` com `medicineBoxId` da caixa; auto-preenchimento farmacológico mockado removido.
+- [x] `EditCEMMedicationScreen`: acha o medicamento na caixa; Suspender/Reativar (M4) + Excluir da caixa (X4). "Salvar estoque" removido (sem endpoint).
+- [x] `HomeScreen`: card "Prescrição Médica" agora com `Ativos: x | Suspensos: y` e progresso reais.
+- [x] Testes: `medicationApi.test.js`, `medicineBoxApi.test.js` (inclui 404 → null), `MedicationForm.test.js`. `npm test` → **73 verdes**. Build: `npx expo export --platform android` sem erros.
 
 **Critérios de aceite**
-- Paciente sem caixa consegue cadastrar uma; segundo cadastro é bloqueado com mensagem clara (409).
-- Adicionar medicação aparece na lista e dentro da gaveta da caixa após refetch.
-- Suspender/reativar e excluir medicação refletem na lista e na caixa.
-- Esvaziar gaveta remove os medicamentos daquela gaveta.
+- [x] Paciente sem caixa vê a CTA e cadastra uma; um 2º cadastro cai no `409` com mensagem distinta para "já possui caixa" × "série duplicada" (B4).
+- [x] Adicionar medicação invalida `['medications','me']` **e** `['medicineBox','me']` → aparece na lista e dentro da gaveta após o refetch.
+- [x] Suspender/reativar (M4) e excluir (M5/X4) refletem em ambas as telas (mesmas query keys).
+- [x] "Esvaziar gaveta" chama `DELETE /medicine-box/me/gaveta?gaveta=` (X5) e revalida a caixa.
 
 ---
 

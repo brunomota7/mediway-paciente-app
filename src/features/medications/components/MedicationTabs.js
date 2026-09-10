@@ -1,4 +1,6 @@
 // 📁 src/features/medications/components/MedicationTabs.js
+//
+// Abas Ativos / Suspensos. Recebe a lista já adaptada por `medicationFromApi`.
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tab, TabView } from '@rneui/themed';
@@ -7,94 +9,45 @@ import { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import styles from '../styles/MedicationTabsStyles';
 
-/**
- * Componente com abas para medicamentos Ativos e Suspensos
- * Usa FlashList para melhor performance
- */
+const STATUS_COLOR = { ATIVO: '#4caf50', SUSPENSO: '#9e9e9e' };
+
 export default function MedicationTabs({ medicamentos = [], onEdit }) {
   const [index, setIndex] = useState(0);
 
-  const ativos = medicamentos.filter(m => m.Situacao === 0);
-  const suspensos = medicamentos.filter(m => m.Situacao !== 0);
+  const ativos = medicamentos.filter((m) => m.status === 'ATIVO');
+  const suspensos = medicamentos.filter((m) => m.status !== 'ATIVO');
 
-  const getSituacaoInfo = (status) => {
-    switch (status) {
-      case 0: return { texto: 'Ativo', cor: '#4caf50' };
-      case 1: return { texto: 'Suspenso', cor: '#9e9e9e' };
-      case 2: return { texto: 'Não faz mais uso', cor: '#ff9800' };
-      default: return { texto: 'Indefinido', cor: '#bbb' };
-    }
-  };
-
-  const formatarData = (data) => {
-    if (!data) return '';
-    return new Date(data).toLocaleDateString('pt-BR');
-  };
-
-  const renderCard = (item) => {
-    const situacaoInfo = getSituacaoInfo(item.Situacao);
-
-    return (
-      <View style={styles.card} key={item.Id11}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.title}>{item.Nome}</Text>
-          <TouchableOpacity onPress={() => onEdit(item)}>
-            <MaterialCommunityIcons name="pencil" size={20} color="#4caf50" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Badge de status */}
-        <View style={[styles.statusBadge, { backgroundColor: situacaoInfo.cor }]}>
-          <Text style={styles.statusText}>{situacaoInfo.texto}</Text>
-        </View>
-
-        <Text style={styles.subTitle}>Tipo: {item.Tipo}</Text>
-        {item.NomeReferencia ? (
-          <Text style={styles.refText}>Referência: {item.NomeReferencia}</Text>
-        ) : null}
-        <Text style={styles.text}>Descrição: {item.Descricao}</Text>
-        <Text style={styles.text}>Concentração: {item.Concentracao}</Text>
-        <Text style={styles.text}>Quantidade: {item.Quantidade}</Text>
-        <Text style={styles.text}>Dias: {item.Dias}</Text>
-        <Text style={styles.text}>Horários: {item.Horarios}</Text>
-        <Text style={styles.text}>Gaveta: {item.Gaveta}</Text>
-        <Text style={styles.text}>Estoque: {item.Estoque}</Text>
-
-        {/* Suspensão */}
-{/*         {item.Situacao !== 0 && item.DataSuspensao && (
-          <View style={styles.suspBox}>
-            <MaterialCommunityIcons name="alert-circle" size={20} color="#e57373" />
-            <Text style={styles.suspText}>Suspenso em: {formatarData(item.DataSuspensao)}</Text>
-            <TouchableOpacity>
-              <Text style={styles.link}>Ver histórico</Text>
-            </TouchableOpacity>
-          </View>
-        )} */}
-        {(item.Situacao !== 0 && item.DataSuspensao) ? (
-          <View style={styles.suspBox}>
-            <MaterialCommunityIcons name="alert-circle" size={20} color="#e57373" />
-            <Text style={styles.suspText}>Suspenso em: {formatarData(item.DataSuspensao)}</Text>
-            <TouchableOpacity>
-              <Text style={styles.link}>Ver histórico</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.histBox}>
-            <MaterialCommunityIcons name="history" size={20} color="#4caf50" />
-            <Text style={styles.histText}>Medicamento ativo</Text> 
-            <TouchableOpacity>
-              <Text style={styles.link}>Ver histórico</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+  const renderCard = (item) => (
+    <View style={styles.card} key={item.id}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.title}>{item.nome}</Text>
+        <TouchableOpacity onPress={() => onEdit(item)}>
+          <MaterialCommunityIcons name="cog-outline" size={20} color="#4caf50" />
+        </TouchableOpacity>
       </View>
-    );
-  };
+
+      <View style={[styles.statusBadge, { backgroundColor: STATUS_COLOR[item.status] ?? '#bbb' }]}>
+        <Text style={styles.statusText}>{item.statusLabel}</Text>
+      </View>
+
+      {item.tipoLabel ? <Text style={styles.subTitle}>Tipo: {item.tipoLabel}</Text> : null}
+      {item.nomeReferencia ? (
+        <Text style={styles.refText}>Referência: {item.nomeReferencia}</Text>
+      ) : null}
+      {item.descricao ? <Text style={styles.text}>Descrição: {item.descricao}</Text> : null}
+      {item.concentracao ? (
+        <Text style={styles.text}>Concentração: {item.concentracao}</Text>
+      ) : null}
+      {item.quantidade ? <Text style={styles.text}>Quantidade: {item.quantidade}</Text> : null}
+      {item.diasLabel ? <Text style={styles.text}>Dias: {item.diasLabel}</Text> : null}
+      {item.hora ? <Text style={styles.text}>Horário: {item.hora}</Text> : null}
+      {item.gaveta ? <Text style={styles.text}>Gaveta: {item.gaveta}</Text> : null}
+      <Text style={styles.text}>Estoque: {item.estoque}</Text>
+    </View>
+  );
 
   return (
     <>
-      
-      {/* Abas de navegação */}
       <Tab
         value={index}
         onChange={setIndex}
@@ -102,7 +55,7 @@ export default function MedicationTabs({ medicamentos = [], onEdit }) {
         containerStyle={styles.tabContainer}
       >
         <Tab.Item
-          title="Ativos"
+          title={`Ativos${ativos.length ? ` (${ativos.length})` : ''}`}
           icon={
             <MaterialCommunityIcons
               name="pill"
@@ -113,7 +66,7 @@ export default function MedicationTabs({ medicamentos = [], onEdit }) {
           titleStyle={index === 0 ? styles.activeTab : styles.inactiveTab}
         />
         <Tab.Item
-          title="Suspensos"
+          title={`Suspensos${suspensos.length ? ` (${suspensos.length})` : ''}`}
           icon={
             <MaterialCommunityIcons
               name="minus-circle-outline"
@@ -125,30 +78,36 @@ export default function MedicationTabs({ medicamentos = [], onEdit }) {
         />
       </Tab>
 
-      {/* Conteúdo das abas */}
       <TabView value={index} onChange={setIndex} animationType="spring">
-        {/* Aba: Ativos */}
         <TabView.Item style={{ flex: 1 }}>
           <FlashList
             data={ativos}
             renderItem={({ item }) => renderCard(item)}
-            keyExtractor={(item) => item.Id11.toString()}
-            estimatedItemSize={250}
+            keyExtractor={(item) => String(item.id)}
+            estimatedItemSize={220}
+            contentContainerStyle={{ padding: 16 }}
+            ListEmptyComponent={
+              <Text style={{ textAlign: 'center', color: '#999', marginTop: 20 }}>
+                Nenhum medicamento ativo.
+              </Text>
+            }
           />
         </TabView.Item>
-
-        {/* Aba: Suspensos */}
         <TabView.Item style={{ flex: 1 }}>
           <FlashList
             data={suspensos}
             renderItem={({ item }) => renderCard(item)}
-            keyExtractor={(item) => item.Id11.toString()}
-            estimatedItemSize={250}
+            keyExtractor={(item) => String(item.id)}
+            estimatedItemSize={220}
             contentContainerStyle={{ padding: 16 }}
+            ListEmptyComponent={
+              <Text style={{ textAlign: 'center', color: '#999', marginTop: 20 }}>
+                Nenhum medicamento suspenso.
+              </Text>
+            }
           />
         </TabView.Item>
       </TabView>
-
     </>
   );
 }

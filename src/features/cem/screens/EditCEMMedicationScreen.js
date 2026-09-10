@@ -1,126 +1,153 @@
 // 📁 src/features/cem/screens/EditCEMMedicationScreen.js
+//
+// A API não edita dados de medicação (L4): só suspender/reativar (M4) e
+// remover da caixa (X4 — DELETE /medicine-box/me/medication/{id}).
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   SafeAreaView,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import styles from '../styles/EditCEMMedicationScreenStyles';
+import { useMedicineBox, useDeleteBoxMedication } from '../../../hooks/useMedicineBox';
+import { useSetMedicationStatus } from '../../../hooks/useMedications';
 
-/**
- * Tela de edição do estoque ou exclusão de medicamento da CEM
- * Padrão MVVM | Visualização somente leitura + edição de estoque
- */
 export default function EditCEMMedicationScreen({ route, navigation }) {
-  const { medicamento } = route.params;
-  const {
-    pos,
-    paciente,
-    serie,
-    nome,
-    tipo,
-    referencia,
-    generico,
-    similar,
-    manipulado,
-    concentracao,
-    quantidadeDose,
-    estoque: estoqueInicial,
-  } = medicamento;
+  const medicationId = route?.params?.medicationId ?? null;
+  const { data: box, isLoading } = useMedicineBox();
+  const setStatus = useSetMedicationStatus();
+  const removeFromBox = useDeleteBoxMedication();
+  const [error, setError] = useState('');
 
-  const [estoque, setEstoque] = useState(estoqueInicial.toString());
-
-  const getCorPaciente = (id) => {
-    return id === 1 ? '#2196f3' : id === 2 ? '#4caf50' : '#ffeb3b';
-  };
-
-  const handleSalvar = () => {
-    if (!estoque || isNaN(estoque) || parseInt(estoque) <= 0) {
-      Alert.alert('Erro', 'Informe uma quantidade válida.');
-      return;
+  const found = useMemo(() => {
+    if (!box) return null;
+    for (const g of box.gavetas) {
+      const m = g.medicamentos.find((x) => String(x.id) === String(medicationId));
+      if (m) return { med: m, gaveta: g.nome };
     }
+    return null;
+  }, [box, medicationId]);
 
-    // Simula atualização de estoque e volta com dados atualizados
-    navigation.navigate('Visualizar Medicamentos CEM', {
-      serie,
-      medicamentoAtualizado: {
-        pos,
-        paciente,
-        medicamento: nome,
-        estoque: parseInt(estoque),
-      },
-    });
-  };
-
-  const handleExcluir = () => {
-    Alert.alert(
-      'Confirmação',
-      'Deseja realmente excluir o medicamento da gaveta?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: () => {
-            navigation.navigate('Visualizar Medicamentos CEM', {
-              serie,
-              gavetaExcluida: pos,
-            });
-          },
-        },
-      ]
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.container, { justifyContent: 'center' }]}>
+          <ActivityIndicator size="large" color="#2e7d32" />
+        </View>
+      </SafeAreaView>
     );
+  }
+
+  if (!found) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.container, { justifyContent: 'center' }]}>
+          <Text style={styles.subtitle}>Medicamento não encontrado na caixa.</Text>
+          <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
+            <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
+            <Text style={styles.cancelButtonText}>Voltar</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const { med, gaveta } = found;
+  const isActive = med.status === 'ATIVO';
+  const busy = setStatus.isPending || removeFromBox.isPending;
+
+  const toggle = async () => {
+    setError('');
+    try {
+      await setStatus.mutateAsync({ id: med.id, status: isActive ? 'SUSPENSO' : 'ATIVO' });
+      navigation.goBack();
+    } catch (err) {
+      setError(err?.message || 'Não foi possível alterar o status.');
+    }
   };
+
+  const excluir = () => {
+    Alert.alert('Excluir medicamento', `Remover "${med.nome}" da caixa?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Excluir',
+        style: 'destructive',
+        onPress: async () => {
+          setError('');
+          try {
+            await removeFromBox.mutateAsync(med.id);
+            navigation.goBack();
+          } catch (err) {
+            setError(err?.message || 'Não foi possível excluir.');
+          }
+        },
+      },
+    ]);
+  };
+
+  const Detail = ({ label, value }) =>
+    value ? <Text style={styles.detailValue}>{label}: {value}</Text> : null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* 🔹 Cabeçalho */}
         <View style={styles.header}>
-          {/* <MaterialCommunityIcons name="pill" size={24} color={getCorPaciente(paciente)} /> */}
-          <Text style={styles.title}>Estoque / Excluir do Medicamento Paciente</Text>
+          <Text style={styles.title}>{med.nome}</Text>
           <Text style={styles.subtitle}>
-            Paciente:
-            <Text style={{ fontWeight: 'bold', color: getCorPaciente(paciente) }}>
-              {' '}Paciente {paciente}
-            </Text>
+            Gaveta: {gaveta || '—'} · {med.statusLabel}
           </Text>
-          <Text style={styles.subtitle}>CEM: {serie} | Gaveta: {pos}</Text>
         </View>
 
-        {/* 🔹 Informações do Medicamento */}
-        <Text style={styles.detail}>Nome: {nome}</Text>
-        <Text style={styles.detail}>Tipo: {tipo}</Text>
-        <Text style={styles.detail}>Referência: {referencia}</Text>
-        <Text style={styles.detail}>Genérico: {generico}</Text>
-        <Text style={styles.detail}>Similar: {similar}</Text>
-        <Text style={styles.detail}>Manipulado: {manipulado}</Text>
-        <Text style={styles.detail}>Concentração: {concentracao}</Text>
-        <Text style={styles.detail}>Quantidade/Dose: {quantidadeDose}</Text>
+        <View style={styles.detailCard}>
+          <Detail label="Tipo" value={med.tipoLabel} />
+          <Detail label="Referência" value={med.nomeReferencia} />
+          <Detail label="Descrição" value={med.descricao} />
+          <Detail label="Concentração" value={med.concentracao} />
+          <Detail label="Quantidade" value={med.quantidade} />
+          <Detail label="Dias" value={med.diasLabel} />
+          <Detail label="Horário" value={med.hora} />
+          <Detail label="Estoque" value={String(med.estoque)} />
+        </View>
 
-        {/* 🔹 Estoque */}
-        <Text style={styles.label}>Quantidade a ser colocada na CEM</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          placeholder="Ex: 10"
-          value={estoque}
-          onChangeText={setEstoque}
-        />
+        <Text style={{ color: '#888', fontSize: 12, marginTop: 12 }}>
+          A API não permite editar os dados. Para alterar, exclua e cadastre de novo.
+        </Text>
 
-        {/* 🔹 Botões */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSalvar}>
-          <MaterialCommunityIcons name="content-save" size={20} color="#fff" />
-          <Text style={styles.saveButtonText}>Salvar Estoque</Text>
+        {error ? <Text style={{ color: '#d32f2f', marginTop: 12 }}>{error}</Text> : null}
+
+        <TouchableOpacity
+          style={[styles.saveButton, busy && { opacity: 0.7 }]}
+          onPress={toggle}
+          disabled={busy}
+        >
+          {setStatus.isPending ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <MaterialCommunityIcons
+                name={isActive ? 'pause-circle' : 'play-circle'}
+                size={20}
+                color="#fff"
+              />
+              <Text style={styles.saveButtonText}>
+                {isActive ? 'Suspender' : 'Reativar'}
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.deleteButton} onPress={handleExcluir}>
+        <TouchableOpacity
+          style={[styles.deleteButton, busy && { opacity: 0.7 }]}
+          onPress={excluir}
+          disabled={busy}
+        >
           <MaterialCommunityIcons name="delete" size={20} color="#fff" />
           <Text style={styles.deleteButtonText}>Excluir Medicamento da CEM</Text>
         </TouchableOpacity>

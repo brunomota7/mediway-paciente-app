@@ -56,6 +56,32 @@ export default StyleSheet.create({
     textAlignVertical: 'top',
   },
 
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    overflow: 'hidden',
+    marginTop: 4,
+  },
+
+  errorText: {
+    color: '#d32f2f',
+    marginTop: 12,
+  },
+
+  warnBox: {
+    backgroundColor: '#fff8e1',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+  },
+
+  warnText: {
+    color: '#8d6e00',
+    fontSize: 13,
+  },
+
   saveButton: {
     backgroundColor: '#4caf50',
     flexDirection: 'row',

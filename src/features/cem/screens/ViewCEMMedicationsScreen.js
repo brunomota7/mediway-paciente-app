@@ -1,180 +1,167 @@
 // 📁 src/features/cem/screens/ViewCEMMedicationsScreen.js
+//
+// Medicamentos da caixa, agrupados por gaveta (dados reais de GET /medicine-box/me).
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
 import styles from '../styles/ViewCEMMedicationsStyles';
 import { useAuth } from '../../../auth/useAuth';
+import { useClearGaveta, useMedicineBox } from '../../../hooks/useMedicineBox';
 
-/**
- * Tela de visualização de medicamentos armazenados nas gavetas de uma CEM
- * Visual clínico com matriz 3x3 e destaque para o paciente logado
- */
 export default function ViewCEMMedicationsScreen() {
-  const route = useRoute();
   const navigation = useNavigation();
-  const { serie, novoMedicamento = null,
-    medicamentoAtualizado = null,
-    gavetaExcluida = null } = route.params || {};
-
   const { user } = useAuth();
   const patientName = user?.name || 'Paciente';
-  const pacienteLogado = 2; // TODO Fase 4: derivar da caixa real (GET /medicine-box/me)
 
-  // Simulação da matriz de gavetas (3x3) com medicamentos e pacientes
-  const [gavetas, setGavetas] = useState([
-    { pos: 'A1', ocupado: true, paciente: 1, medicamento: 'Dipirona' },
-    { pos: 'A2', ocupado: false },
-    { pos: 'A3', ocupado: true, paciente: 2, medicamento: 'Paracetamol' },
-    { pos: 'B1', ocupado: false },
-    { pos: 'B2', ocupado: true, paciente: 3, medicamento: 'Losartana' },
-    { pos: 'B3', ocupado: true, paciente: 2, medicamento: 'Omeprazol' },
-    { pos: 'C1', ocupado: false },
-    { pos: 'C2', ocupado: false },
-    { pos: 'C3', ocupado: true, paciente: 1, medicamento: 'Metformina' },
-  ]);
+  const { data: box, isLoading, isError, error, refetch } = useMedicineBox();
+  const clearGaveta = useClearGaveta();
 
-  // Novo medicamento adicionado
-  useEffect(() => {
-    if (route.params?.novoMedicamento) {
-      const atualizada = gavetas.map((g) =>
-        g.pos === route.params.novoMedicamento.pos
-          ? {
-            ...g,
-            ocupado: true,
-            paciente: route.params.novoMedicamento.paciente,
-            medicamento: route.params.novoMedicamento.medicamento,
-          }
-          : g
-      );
-      setGavetas(atualizada);
-
-      // Limpa o param para evitar reexecução no re-render
-      navigation.setParams({ novoMedicamento: null });
-    }
-  }, [route.params?.novoMedicamento]);
-
-  // 🔄 Atualiza estoque do medicamento
-  useEffect(() => {
-    if (medicamentoAtualizado) {
-      const atualizada = gavetas.map((g) =>
-        g.pos === medicamentoAtualizado.pos
-          ? {
-            ...g,
-            ocupado: true,
-            paciente: medicamentoAtualizado.paciente,
-            medicamento: medicamentoAtualizado.medicamento,
-          }
-          : g
-      );
-      setGavetas(atualizada);
-      navigation.setParams({ medicamentoAtualizado: null });
-    }
-  }, [medicamentoAtualizado]);
-
-  // 🔄 Remove medicamento e libera gaveta
-  useEffect(() => {
-    if (gavetaExcluida) {
-      const atualizada = gavetas.map((g) =>
-        g.pos === gavetaExcluida ? { pos: g.pos, ocupado: false } : g
-      );
-      setGavetas(atualizada);
-      navigation.setParams({ gavetaExcluida: null });
-    }
-  }, [gavetaExcluida]);
-
-  const getCorPaciente = (paciente) => {
-    switch (paciente) {
-      case 1: return '#2196f3'; // azul
-      case 2: return '#4caf50'; // verde
-      case 3: return '#ffeb3b'; // amarelo
-      default: return '#e0e0e0';
-    }
+  const handleClearGaveta = (nome) => {
+    Alert.alert('Esvaziar gaveta', `Remover todos os medicamentos de "${nome}"?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Esvaziar',
+        style: 'destructive',
+        onPress: () => clearGaveta.mutate(nome),
+      },
+    ]);
   };
 
-  const handleGavetaPress = (item) => {
-    if (!item.ocupado) {
-      navigation.navigate('Adicionar Medicamento CEM', {
-        posicao: item.pos,
-        paciente: pacienteLogado,
-        serie,
-      });
-    } else if (item.paciente === pacienteLogado) {
-      navigation.navigate('Editar Medicamento CEM', {
-        medicamento: {
-          pos: item.pos,
-          paciente: item.paciente,
-          serie,
-          nome: item.medicamento,
-          tipo: 'Genérico',
-          referencia: 'Referência XYZ',
-          generico: 'Genérico ABC',
-          similar: 'Similar DEF',
-          manipulado: 'Manipulado GHI',
-          concentracao: '500mg',
-          quantidadeDose: '1 comprimido',
-          estoque: 10,
-        },
-      });
-    }
-  };
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.container, { justifyContent: 'center' }]}>
+          <ActivityIndicator size="large" color="#2e7d32" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-  const renderCell = (item, index) => (
-    <TouchableOpacity key={index} style={styles.cell} onPress={() => handleGavetaPress(item)}>
-      <MaterialCommunityIcons
-        name="pill"
-        size={30}
-        color={item.ocupado ? getCorPaciente(item.paciente) : '#ccc'}
-      />
-      <Text style={styles.cellLabel}>{item.pos}</Text>
-      {item.ocupado && <Text style={styles.medName}>{item.medicamento}</Text>}
-    </TouchableOpacity>
-  );
+  if (isError) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.container, { justifyContent: 'center' }]}>
+          <Text style={styles.subtitle}>
+            {error?.message || 'Não foi possível carregar a caixa.'}
+          </Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => refetch()}>
+            <Text style={styles.backButtonText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!box) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.container, { justifyContent: 'center' }]}>
+          <Text style={styles.subtitle}>Você ainda não tem uma caixa cadastrada.</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
+            <Text style={styles.backButtonText}>Voltar</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* 🔹 Cabeçalho */}
         <View style={styles.header}>
-          <MaterialCommunityIcons name="radio-tower" size={28} color="#4caf50" />
+          <MaterialCommunityIcons name="chip" size={28} color="#4caf50" />
           <Text style={styles.title}>Medicamentos da CEM</Text>
-          <Text style={styles.subtitle}>Série: {serie}</Text>
+          <Text style={styles.subtitle}>
+            {patientName} · Série: {box.numeroSerie}
+          </Text>
         </View>
 
-        {/* 🔹 Lista de Pacientes (um abaixo do outro) */}
-        <View style={styles.legendContainer}>
-          <View style={styles.legendItem}>
-            <MaterialCommunityIcons name="pill" size={20} color="#2196f3" />
-            <Text style={styles.legendText}>Paciente 1: João da Silva</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <MaterialCommunityIcons name="pill" size={20} color="#4caf50" />
-            <Text style={styles.legendText}>Paciente 2: {patientName} (você)</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <MaterialCommunityIcons name="pill" size={20} color="#ffeb3b" />
-            <Text style={styles.legendText}>Paciente 3: Maria Oliveira</Text>
-          </View>
-        </View>
+        <ScrollView contentContainerStyle={{ paddingBottom: 12 }}>
+          {box.gavetas.length === 0 ? (
+            <Text style={styles.explanationText}>Nenhuma gaveta na caixa.</Text>
+          ) : (
+            box.gavetas.map((g, gi) => (
+              <View key={g.nome ?? gi} style={{ marginBottom: 18 }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Text style={styles.title}>{g.nome || `Gaveta ${gi + 1}`}</Text>
+                  {g.medicamentos.length > 0 && g.nome ? (
+                    <TouchableOpacity onPress={() => handleClearGaveta(g.nome)}>
+                      <MaterialCommunityIcons name="delete-sweep" size={22} color="#e53935" />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
 
-        {/* 🔹 Matriz 3x3 (3 medicamentos por linha) */}
-        <View style={styles.grid}>
-          {gavetas.map((item, index) => renderCell(item, index))}
-        </View>
+                {g.medicamentos.length === 0 ? (
+                  <Text style={styles.explanationText}>Gaveta vazia.</Text>
+                ) : (
+                  g.medicamentos.map((m) => (
+                    <TouchableOpacity
+                      key={m.id}
+                      onPress={() =>
+                        navigation.navigate('Editar Medicamento CEM', { medicationId: m.id })
+                      }
+                    >
+                      <View
+                        style={{
+                          borderWidth: 1,
+                          borderColor: '#c8e6c9',
+                          borderRadius: 8,
+                          padding: 12,
+                          marginTop: 8,
+                          backgroundColor: '#f9f9f9',
+                        }}
+                      >
+                        <Text style={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                          {m.nome}{' '}
+                          <Text style={{ fontWeight: 'normal', color: '#888' }}>
+                            ({m.statusLabel})
+                          </Text>
+                        </Text>
+                        {m.diasLabel ? (
+                          <Text style={styles.explanationText}>
+                            {m.diasLabel} · {m.hora} · estoque {m.estoque}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
+            ))
+          )}
+        </ScrollView>
 
-        {/* 🔹 Legenda */}
-        <View style={styles.explanation}>
-          <Text style={styles.explanationText}>Legenda:</Text>
-          <Text style={styles.explanationText}>🟢 Medicamento do Paciente 2</Text>
-          <Text style={styles.explanationText}>🟡 Medicamento do Paciente 3</Text>
-          <Text style={styles.explanationText}>⚪ Gaveta disponível</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Adicionar Medicamento CEM')}
+        >
+          <MaterialCommunityIcons name="plus" size={20} color="#388e3c" />
+          <Text style={styles.backButtonText}>Adicionar medicamento</Text>
+        </TouchableOpacity>
 
-        {/* 🔙 Botão para voltar */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={[styles.backButton, { marginTop: 8 }]}
+          onPress={() => navigation.goBack()}
+        >
           <MaterialCommunityIcons name="arrow-left" size={20} color="#388e3c" />
-          <Text style={styles.backButtonText}>Voltar à Lista de CEMs</Text>
+          <Text style={styles.backButtonText}>Voltar</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
