@@ -157,7 +157,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | `/medicine-box` | `GET /patient/{patientId}`, `DELETE /admin/{userId}` | exige ADMIN/MÉDICO/CUIDADOR |
 | `/vaccine` | `POST /register/{patientId}`, `PUT /{id}/status`, `DELETE /{id}`, `GET /patient/{patientId}`, `GET /by-status` | escrita exige ADMIN/CUIDADOR/MÉDICO (lacuna L1) |
 
-**Consequências de UI (ver fases 3, 5 e 6):** telas/modais de **agendar/editar consulta**, **agendar/editar exame** e **adicionar/editar/excluir vacina** ficam **somente leitura** ou ocultos. `CaregiverListScreen`, `TreatmentListScreen`, `NotificationScreen`, `BloodTypeScreen` e login social ficam **ocultos no MVP** (sem backend).
+**Consequências de UI (ver fases 3, 5 e 6):** telas/modais de **agendar/editar consulta**, **agendar/editar exame** e **adicionar/editar/excluir vacina** ficam **somente leitura**. `CaregiverListScreen`, `TreatmentListScreen`, `NotificationScreen`, `BloodTypeScreen` e o login social foram **removidos** (sem backend, só tinham mock) — a serem reconstruídos quando as rotas existirem (§14).
 
 ---
 
@@ -385,17 +385,14 @@ Fora de `src/`: `App.js` reescrito (SafeAreaProvider → QueryClientProvider →
 **Objetivo:** deixar o app coerente com o que a API oferece hoje.
 
 **Tarefas**
-- [x] `config/features.js`: flags `caregivers`, `treatments`, `notifications`, `bloodType`, `socialLogin` — todas `false`.
 - [x] **Troca de senha logado** (`ChangePasswordScreen`, L5): reescrito como assistente em 2 passos que reusa A3 (`requestReset` com o e-mail do `user`) → A4 (`validateCode`) → A5 (`resetPassword` com o `tokenTemp`), com reenvio. Sem `bcryptjs` (já removido na Fase 1).
-- [x] **Cuidadores** (L6): `Drawer.Screen` "Cuidadores" e o atalho da Home atrás de `features.caregivers`. Tela mantida no repo para quando houver `GET /caregiver/me` (§14).
-- [x] **Tratamentos** (L7): `Stack.Screen` "Tratamentos" e o atalho da Home atrás de `features.treatments`.
-- [x] **Notificações** (L8): `Drawer.Screen` "Notificações", `Stack.Screen` "Notifications", o item do menu e o `TabIcon` da Home atrás de `features.notifications`.
-- [x] **Tipo sanguíneo** (L9): `Drawer.Screen` "Tipo Sanguíneo" e o item do menu atrás de `features.bloodType`.
-- [x] **Login social** (L10): telas e botões já removidos na Fase 1; flag `socialLogin` documenta a decisão.
+- [x] **Cuidadores** (L6), **Tratamentos** (L7), **Notificações** (L8), **Tipo sanguíneo** (L9): telas, modais, estilos e atalhos **removidos** — não têm endpoint e só continham dados mock. Serão reconstruídos contra os DTOs reais quando o backend expuser as rotas (§14). `config/features.js` foi removido junto (só existia para escondê-las).
+- [x] **Login social** (L10): telas e botões já removidos na Fase 1.
+- [x] _Passo de limpeza (pós-Fase 7):_ removidos também o `HomeScreen` órfão em `features/auth/screens/` e todo dado mock residual — o app só renderiza dados vindos da API.
 
 **Critérios de aceite**
-- [x] Com as flags `false`, o menu lateral e a Home não mostram Cuidadores / Tratamentos / Notificações / Tipo Sanguíneo; as rotas ficam fora do `AppStack`.
-- [x] Nenhum botão visível leva a uma rota inexistente (`grep` por `navigate('Cuidadores'|'Tratamentos'|'Notifications'|'Tipo Sanguíneo')` só acha chamadas dentro de blocos `{features.* && …}` ou de branches inalcançáveis do `handleTabPress`).
+- [x] O menu lateral (Perfil, Troca de Senha, Vacinas, Sair) e a Home (CEM, Medicamentos, Consultas, Exames) só levam a telas que consomem a API.
+- [x] `grep` por `simula|mock|fake|Edilson|dados de exemplo` em `src/` (fora de `__tests__`) não acha nenhum dado fabricado.
 - [x] Pendências de backend já listadas em §14 (itens 5–8: troca de senha logado, `GET /caregiver/me`, módulo de tratamentos, campo tipo sanguíneo).
 - [x] `npm test` → **81 verdes**; `npx expo export --platform android` sem erros.
 

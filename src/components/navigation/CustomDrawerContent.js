@@ -5,7 +5,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 
 import { useAuth } from '../../auth/useAuth';
-import { features } from '../../config/features';
 
 /**
  * Menu lateral personalizado do Drawer (AppStack).
@@ -34,22 +33,6 @@ const CustomDrawerContent = (props) => {
         labelStyle={{ color: '#2e7d32' }}
         onPress={() => props.navigation.navigate('Troca de Senha')}
       />
-      {features.bloodType && (
-        <DrawerItem
-          label="Tipo Sanguíneo"
-          icon={() => <MaterialIcons name="opacity" size={24} color="#2e7d32" />}
-          labelStyle={{ color: '#2e7d32' }}
-          onPress={() => props.navigation.navigate('Tipo Sanguíneo')}
-        />
-      )}
-      {features.notifications && (
-        <DrawerItem
-          label="Notificações"
-          icon={() => <MaterialIcons name="notifications" size={24} color="#2e7d32" />}
-          labelStyle={{ color: '#2e7d32' }}
-          onPress={() => props.navigation.navigate('Notificações')}
-        />
-      )}
       <DrawerItem
         label="Vacinas"
         icon={() => <MaterialIcons name="local-hospital" size={24} color="#2e7d32" />}
