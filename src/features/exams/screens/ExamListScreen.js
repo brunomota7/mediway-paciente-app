@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import ExamTabs from '../components/ExamTabs';
 import styles from '../styles/ExamListScreenStyles';
+import { useAuth } from '../../../auth/useAuth';
 
 import AddExamModal from './AddExamModal';
 import EditExamModal from './EditExamModal';
@@ -15,7 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
  * MVVM | Visual Mediway
  */
 export default function ExamListScreen({ navigation }) {
-  
+    const { user } = useAuth();
+    const patientName = user?.name || 'Paciente';
+
     const [modalVisible, setModalVisible] = useState(false);
     const [editModalVisible, setEditModalVisible] = useState(false); // ✅ controle do modal de edição
     const [exameSelecionado, setExameSelecionado] = useState(null); // ✅ exame em edição
@@ -143,7 +146,7 @@ export default function ExamListScreen({ navigation }) {
       <View style={styles.container}>
           {/* Título e Identificação */}
           <Text style={styles.title}>Exames</Text>
-          <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+          <Text style={styles.subtitle}>{patientName}</Text>
 
           {/* Abas com lista de exames */}
           <ExamTabs 

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import ConsultationTabs from '../components/ConsultationTabs';
 import styles from '../styles/ConsultationListScreenStyles';
+import { useAuth } from '../../../auth/useAuth';
 
 import AddConsultationModal from './AddConsultationModal';
 import EditConsultationModal from './EditConsultationModal';
@@ -14,6 +15,8 @@ import EditConsultationModal from './EditConsultationModal';
  * Segue padrão MVVM, responsivo, com identidade visual Mediway
  */
 export default function ConsultationListScreen({ navigation }) {
+  const { user } = useAuth();
+  const patientName = user?.name || 'Paciente';
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false); // ✅ controle do modal de edição
@@ -118,7 +121,7 @@ export default function ConsultationListScreen({ navigation }) {
       <View style={styles.container}>
         {/* 🔹 Título e Identificação */}
         <Text style={styles.title}>Consultas</Text>
-        <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+        <Text style={styles.subtitle}>{patientName}</Text>
 
         {/* 🔹 Passar os dados de consultas para o componente */}
         <ConsultationTabs

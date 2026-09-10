@@ -11,9 +11,19 @@ import {
 
 import DeleteVaccineModal from "../screens/DeleteVaccineModal";
 import styles from "../styles/VaccineHistoryScreenStyles";
+import { useAuth } from "../../../auth/useAuth";
+import { Gender } from "../../../lib/enums";
+import { toBrDate } from "../../../lib/datetime";
 
 export default function VaccineHistoryScreen() {
   const navigation = useNavigation();
+  const { user } = useAuth();
+  const patientName = user?.name || 'Paciente';
+  const patientDetails = [
+    user?.dateOfBirth ? `Nascimento: ${toBrDate(user.dateOfBirth)}` : null,
+    user?.age != null ? `Idade: ${user.age}` : null,
+    user?.gender ? `Sexo: ${Gender.label(user.gender)}` : null,
+  ].filter(Boolean).join(' | ');
 
   const [modalVisible, setModalVisible] = useState(false);
   const [vacinaSelecionada, setVacinaSelecionada] = useState(null);
@@ -93,10 +103,10 @@ export default function VaccineHistoryScreen() {
             color="#4caf50"
           />
           <View>
-            <Text style={styles.patientName}>Edilson Carlos Silva Lima</Text>
-            <Text style={styles.patientDetails}>
-              Nascimento: 23/11/1975 | Idade: 39 | Sexo: Masculino
-            </Text>
+            <Text style={styles.patientName}>{patientName}</Text>
+            {patientDetails ? (
+              <Text style={styles.patientDetails}>{patientDetails}</Text>
+            ) : null}
           </View>
         </View>
       </View>
@@ -183,7 +193,7 @@ export default function VaccineHistoryScreen() {
         onClose={() => setModalVisible(false)}
         onConfirm={confirmarExclusao}
         vacina={vacinaSelecionada}
-        paciente="Edilson Carlos Silva Lima"
+        paciente={patientName}
       />
     </SafeAreaView>
   );

@@ -12,12 +12,15 @@ import {
 } from 'react-native';
 import styles from '../styles/CEMListScreenStyles';
 import AddCEMModal from './AddCEMModal';
+import { useAuth } from '../../../auth/useAuth';
 
 /**
  * Tela para listar e gerenciar CEMs (Caixas Eletrônicas de Medicamentos) associadas ao paciente
  * Padrão MVVM, visual Mediway
  */
 export default function CEMListScreen({ navigation }) {
+  const { user } = useAuth();
+  const patientName = user?.name || 'Paciente';
 
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -98,7 +101,7 @@ export default function CEMListScreen({ navigation }) {
         <View style={styles.header}>
           <MaterialCommunityIcons name="chip" size={28} color="#4caf50" />
           <Text style={styles.title}>Caixa Eletrônica de Medicamento (CEM)</Text>
-          <Text style={styles.subtitle}>Edilson Carlos Silva Lima</Text>
+          <Text style={styles.subtitle}>{patientName}</Text>
         </View>
 
         {/* Lista de CEMs */}

@@ -5,6 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
 import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import styles from '../styles/ViewCEMMedicationsStyles';
+import { useAuth } from '../../../auth/useAuth';
 
 /**
  * Tela de visualização de medicamentos armazenados nas gavetas de uma CEM
@@ -17,7 +18,9 @@ export default function ViewCEMMedicationsScreen() {
     medicamentoAtualizado = null,
     gavetaExcluida = null } = route.params || {};
 
-  const pacienteLogado = 2; // Edilson (logado)
+  const { user } = useAuth();
+  const patientName = user?.name || 'Paciente';
+  const pacienteLogado = 2; // TODO Fase 4: derivar da caixa real (GET /medicine-box/me)
 
   // Simulação da matriz de gavetas (3x3) com medicamentos e pacientes
   const [gavetas, setGavetas] = useState([
@@ -147,7 +150,7 @@ export default function ViewCEMMedicationsScreen() {
           </View>
           <View style={styles.legendItem}>
             <MaterialCommunityIcons name="pill" size={20} color="#4caf50" />
-            <Text style={styles.legendText}>Paciente 2: Edilson Lima (você)</Text>
+            <Text style={styles.legendText}>Paciente 2: {patientName} (você)</Text>
           </View>
           <View style={styles.legendItem}>
             <MaterialCommunityIcons name="pill" size={20} color="#ffeb3b" />

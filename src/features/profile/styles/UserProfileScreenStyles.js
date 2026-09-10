@@ -50,6 +50,40 @@ const styles = StyleSheet.create({
     borderColor: '#c8e6c9',
     borderRadius: 8,
     marginBottom: 12,
+    overflow: 'hidden',
+  },
+  readonly: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    backgroundColor: '#f2f2f2',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  readonlyText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  hint: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: -6,
+    marginBottom: 12,
+  },
+  error: {
+    color: '#d32f2f',
+    marginBottom: 12,
+  },
+  success: {
+    color: '#2e7d32',
+    marginBottom: 12,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: '#ffffff',
   },
   saveButton: {
     backgroundColor: '#4caf50',

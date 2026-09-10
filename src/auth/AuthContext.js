@@ -10,9 +10,8 @@
 //   'needsOnboarding' -> logado, sem cadastro clínico -> OnboardingStack (Fase 2)
 //   'signedIn'        -> logado e com cadastro clínico -> AppStack
 //
-// Fase 1: o bootstrap e o login chamam `GET /patients/me` para distinguir
-// `signedIn` de `needsOnboarding` e carregar `user`. O adapter aqui é mínimo;
-// a Fase 2 move isso para `api/endpoints/patientApi.js` + `patientFromApi`.
+// Fase 1/2: o bootstrap e o login chamam `GET /patients/me` (via `patientApi`)
+// para distinguir `signedIn` de `needsOnboarding` e carregar `user`.
 
 import {
   createContext,
@@ -23,8 +22,9 @@ import {
   useState,
 } from 'react';
 
-import { api, configureAuthBridge } from '../api/client';
+import { configureAuthBridge } from '../api/client';
 import { ApiError } from '../api/httpError';
+import { patientApi } from '../api/endpoints/patientApi';
 import { clearSession, isExpired, loadSession, saveSession } from './session';
 
 export const AuthContext = createContext(null);
@@ -36,28 +36,6 @@ const INITIAL_STATE = {
   expiresAt: null,
   user: null,
 };
-
-/** Adapter mínimo de `PatientResponseInfosDTO` -> modelo do app (Fase 2 amplia). */
-function adaptMe(dto) {
-  const personal = dto?.personalInfo ?? {};
-  const contact = dto?.contactInfo ?? {};
-  const medical = dto?.medicalInfo ?? {};
-  return {
-    id: dto?.patientI ?? dto?.patientId ?? null, // B1: typo conhecido do backend
-    name: personal.name ?? null,
-    email: contact.email ?? null,
-    number: contact.number ?? null,
-    dateOfBirth: personal.dateOfBirth ?? null,
-    age: personal.age ?? null,
-    gender: personal.gender ?? null,
-    roles: Array.isArray(personal.roles) ? personal.roles : [],
-    conditionPatient: medical.conditionPatient ?? null,
-    statusPatient: medical.statusPatient ?? null,
-    hasMedicalInfo: Boolean(
-      medical && (medical.statusPatient || medical.conditionPatient),
-    ),
-  };
-}
 
 export function AuthProvider({ children }) {
   const [state, setState] = useState(INITIAL_STATE);
@@ -90,8 +68,7 @@ export function AuthProvider({ children }) {
     async (session) => {
       applyToken(session);
       try {
-        const { data } = await api.get('/patients/me');
-        const user = adaptMe(data);
+        const user = await patientApi.getMe();
         setState((prev) => ({
           ...prev,
           user,

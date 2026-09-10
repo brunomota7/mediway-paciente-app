@@ -12,6 +12,7 @@ import {
 import AddCaregiverModal from "../screens/AddCaregiverModal";
 import AddTeamMemberModal from "../screens/AddTeamMemberModal";
 import styles from "../styles/CaregiverListScreenStyles";
+import { useAuth } from "../../../auth/useAuth";
 
 /**
  * Tela de listagem da rede de cuidadores do paciente
@@ -19,6 +20,9 @@ import styles from "../styles/CaregiverListScreenStyles";
  * Segue padrão MVVM e identidade visual Mediway
  */
 export default function CaregiverListScreen({ navigation }) {
+  const { user } = useAuth();
+  const patientName = user?.name || 'Paciente';
+
   const [modalEquipeVisible, setModalEquipeVisible] = useState(false);
   const [modalCuidadorVisible, setModalCuidadorVisible] = useState(false);
 
@@ -68,7 +72,7 @@ export default function CaregiverListScreen({ navigation }) {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         {/* Identificação do Paciente */}
-        <Text style={styles.patientName}>Edilson Carlos Silva Lima</Text>
+        <Text style={styles.patientName}>{patientName}</Text>
         <Text style={styles.patientRole}>Paciente</Text>
 
         {/* Equipe Multidisciplinar */}

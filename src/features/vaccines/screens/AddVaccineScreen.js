@@ -13,12 +13,23 @@ import {
   View,
 } from "react-native";
 import styles from "../styles/AddVaccineScreenStyles";
+import { useAuth } from "../../../auth/useAuth";
+import { Gender } from "../../../lib/enums";
+import { toBrDate } from "../../../lib/datetime";
 
 /**
  * Tela modal para adicionar vacina à carteira do paciente.
  * Segue padrão MVVM com ViewModel e separação de estilos.
  */
 export default function AddVaccineScreen({ navigation }) {
+  const { user } = useAuth();
+  const patientName = user?.name || 'Paciente';
+  const patientDetails = [
+    user?.dateOfBirth ? `Nascimento: ${toBrDate(user.dateOfBirth)}` : null,
+    user?.age != null ? `Idade: ${user.age}` : null,
+    user?.gender ? `Sexo: ${Gender.label(user.gender)}` : null,
+  ].filter(Boolean).join(' | ');
+
   // 🧠 ViewModel: estados do formulário
   const [vacinaSelecionada, setVacinaSelecionada] = useState("");
   const [tipoDose, setTipoDose] = useState("");
@@ -69,10 +80,10 @@ export default function AddVaccineScreen({ navigation }) {
 
         {/* 🔹 Info do paciente */}
         <View style={styles.patientInfo}>
-          <Text style={styles.patientName}>Edilson Carlos Silva Lima</Text>
-          <Text style={styles.patientDetails}>
-            Nascimento: 23/11/1975 | Idade: 39 | Sexo: Masculino
-          </Text>
+          <Text style={styles.patientName}>{patientName}</Text>
+          {patientDetails ? (
+            <Text style={styles.patientDetails}>{patientDetails}</Text>
+          ) : null}
         </View>
 
         {/* 🔹 Formulário */}

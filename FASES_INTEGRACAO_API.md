@@ -22,7 +22,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 |---|---|---|
 | 0 | Fundação da camada de integração | ✅ Concluída (2026-09-10) |
 | 1 | Autenticação e sessão | ✅ Concluída (2026-09-10) |
-| 2 | Perfil do paciente e onboarding | ⬜ Não iniciada |
+| 2 | Perfil do paciente e onboarding | ✅ Concluída (2026-09-10) |
 | 3 | Consultas e exames (leitura) + dashboard | ⬜ Não iniciada |
 | 4 | Medicações e Caixa (CEM) | ⬜ Não iniciada |
 | 5 | Vacinas (leitura) | ⬜ Não iniciada |
@@ -84,9 +84,9 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 
 | # | Método / Rota | Acesso | Corpo / Query (→ resposta) | Consumido em | Fase | Status |
 |---|---|---|---|---|---|---|
-| P1 | `GET /patients/me` | `SCOPE_PACIENTE` | → `PatientResponseInfosDTO` (`patientI`, `personalInfo`, `contactInfo`, `medicalInfo`) | bootstrap de sessão, `UserProfileScreen`, header de várias telas | 2 | `[ ]` |
-| P2 | `POST /patients/add-infos` | `SCOPE_PACIENTE` | `{ dateOfBirth*(passada), conditionPatient*, statusPatient*, gender* }` → `201` sem corpo | tela de **onboarding clínico** (nova) | 2 | `[ ]` |
-| P3 | `PUT /patients/update-infos` | `SCOPE_PACIENTE` | parcial: `{ name?, email?, number?, dateOfBirth?, conditionPatient?, gender? }` → `200` sem corpo | `UserProfileScreen` | 2 | `[ ]` |
+| P1 | `GET /patients/me` | `SCOPE_PACIENTE` | → `PatientResponseInfosDTO` (`patientI`, `personalInfo`, `contactInfo`, `medicalInfo`) | bootstrap de sessão, `usePatient` (`UserProfileScreen`), `user.name` em headers | 2 | `[x]` |
+| P2 | `POST /patients/add-infos` | `SCOPE_PACIENTE` | `{ dateOfBirth*(passada), conditionPatient*, statusPatient*, gender* }` → `201` sem corpo | `OnboardingScreen` (nova) | 2 | `[x]` |
+| P3 | `PUT /patients/update-infos` | `SCOPE_PACIENTE` | parcial: `{ name?, email?, number?, dateOfBirth?, conditionPatient?, gender? }` → `200` sem corpo | `UserProfileScreen` (envia só o diff) | 2 | `[x]` |
 
 ### 2.3 PACIENTE — Consultas `/api/v1/consultation` (somente leitura)
 
@@ -164,7 +164,7 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 ## 4. Checklist mestre (endpoint → fase)
 
 **Fase 1 – Auth (global):** `[x]` A1 `[x]` A2 `[x]` A3 `[x]` A4 `[x]` A5
-**Fase 2 – Perfil:** `[ ]` P1 `[ ]` P2 `[ ]` P3
+**Fase 2 – Perfil:** `[x]` P1 `[x]` P2 `[x]` P3
 **Fase 3 – Consultas/Exames:** `[ ]` C1 `[ ]` C2 `[ ]` E1 `[ ]` E2
 **Fase 4 – Medicações/Caixa:** `[ ]` M1 `[ ]` M2 `[ ]` M3 `[ ]` M4 `[ ]` M5 `[ ]` X1 `[ ]` X2 `[ ]` X3 `[ ]` X4 `[ ]` X5
 **Fase 5 – Vacinas:** `[ ]` V1 `[ ]` V2
@@ -272,24 +272,27 @@ Fora de `src/`: `App.js` reescrito (SafeAreaProvider → QueryClientProvider →
 
 ## 7. Fase 2 — Perfil do paciente e onboarding clínico
 
+**Status: ✅ Concluída (2026-09-10)** · commit na branch `feat/fase-2-perfil-onboarding`
+
 **Objetivo:** dados reais do paciente em todo o app; completar cadastro clínico obrigatório.
 
 **Endpoints:** P1 `GET /patients/me` · P2 `POST /patients/add-infos` · P3 `PUT /patients/update-infos`
 
 **Tarefas**
-- [ ] `api/endpoints/patientApi.js`: `getMe`, `addInfos`, `updateInfos`.
-- [ ] Adapter `patientFromApi(dto)`: lê **`patientI`** (B1) e achata `personalInfo`/`contactInfo`/`medicalInfo` para um modelo do app; expõe `hasMedicalInfo`.
-- [ ] `hooks/usePatient.js`: query `['patient','me']`; `useUpdatePatient` (mutation → invalida a query).
-- [ ] Tela **Onboarding clínico** (nova, no `OnboardingStack`): campos `dateOfBirth` (data passada), `conditionPatient` (texto), `statusPatient` (enum), `gender` (enum) → `addInfos` → passa para `AppStack`.
-- [ ] `AuthContext.refreshMe()` após `addInfos`.
-- [ ] `UserProfileScreen`: remover mocks; carregar de `usePatient`; salvar com `updateInfos` (enviar só campos alterados). Remover campos sem correspondência na API ("Usuário", "Celular" separado) ou mapeá-los para `number`.
-- [ ] Substituir nome hard-coded (`"Edilson Carlos Silva Lima"`) pelo `user.name` do contexto em: `VaccineHistoryScreen`, `ConsultationListScreen`, `ExamListScreen`, `CEMListScreen`, `CaregiverListScreen`, `AddVaccineScreen`, `ViewCEMMedicationsScreen`.
-- [ ] Guarda de navegação: se `!hasMedicalInfo` após login → forçar `OnboardingStack` (L13).
+- [x] `api/endpoints/patientApi.js`: `getMe` (adapta), `addInfos` (4 campos), `updateInfos` (parcial).
+- [x] Adapter `patientFromApi(dto)` (co-locado em `patientApi.js`): lê **`patientI`** (B1), achata `personalInfo`/`contactInfo`/`medicalInfo`, expõe `hasMedicalInfo` e `raw`. O `AuthContext` deixou de ter o adapter inline e passou a usar `patientApi.getMe`.
+- [x] `hooks/usePatient.js`: `usePatient` (query `['patient','me']`, `initialData` = `AuthContext.user`), `useUpdatePatient` e `useAddPatientInfos` (mutations → `invalidateQueries` + `refreshMe`).
+- [x] `OnboardingScreen` (nova, em `src/features/onboarding/`) no `OnboardingStack`: `dateOfBirth` (DateTimePicker, `maximumDate` = ontem), `conditionPatient` (texto), `statusPatient` e `gender` (Pickers com `lib/enums`) → `useAddPatientInfos` → `refreshMe` troca o status → `AppStack`. `OnboardingPlaceholderScreen` removido.
+- [x] `refreshMe()` disparado no `onSuccess` de `useAddPatientInfos` / `useUpdatePatient`.
+- [x] `UserProfileScreen`: sem mocks; carrega de `usePatient`; salva com `useUpdatePatient` **enviando apenas o diff** (comparação com o baseline vindo da API). Campos: nome, e-mail, telefone (→ `number`, "Usuário"/"Celular" removidos), data de nascimento, gênero (enum), condição de saúde. `statusPatient` é somente leitura. Estados de loading/erro/retry.
+- [x] Nome hard-coded substituído por `user?.name` em `VaccineHistoryScreen`, `ConsultationListScreen`, `ExamListScreen`, `CEMListScreen`, `CaregiverListScreen`, `AddVaccineScreen`, `ViewCEMMedicationsScreen` (nas carteiras de vacina, a linha demográfica também passou a usar `user`).
+- [x] Guarda de navegação (L13): já garantida pelo `AuthContext` — `status === 'needsOnboarding'` → `RootNavigator` renderiza o `OnboardingStack`; sai dele só quando `refreshMe` vê `medicalInfo`.
+- [x] Testes: `patientApi.test.js` (adapter + rotas/corpos de `getMe`/`addInfos`/`updateInfos`). `npm test` → **41 testes verdes**. Build: `npx expo export --platform android` sem erros.
 
 **Critérios de aceite**
-- Primeiro login de um usuário recém-cadastrado abre o onboarding; após salvar, não abre mais.
-- `UserProfileScreen` mostra e edita dados reais; `PUT` parcial funciona.
-- Nenhuma tela exibe o nome fixo antigo.
+- [x] Primeiro login de um usuário recém-cadastrado abre o onboarding; após salvar, `refreshMe` → `signedIn` e não abre mais. _(coberto por `AuthContext.test.js` "needsOnboarding"; ponta-a-ponta depende da API no ar.)_
+- [x] `UserProfileScreen` mostra e edita dados reais; o `PUT` envia só os campos alterados (`diff`).
+- [x] Nenhuma das 7 telas do escopo exibe o nome fixo antigo (demais telas serão tratadas nas Fases 3–6, quando são reescritas).
 
 ---
 
