@@ -1,6 +1,7 @@
 import { act, create } from 'react-test-renderer';
 import { useAuth } from '../useAuth';
 import { AuthProvider } from '../AuthContext';
+import { ApiError } from '../../api/httpError';
 
 // --- mocks de infraestrutura -------------------------------------------------
 const mockStore = new Map();
@@ -17,8 +18,9 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 const mockApiGet = jest.fn();
+const mockApiPost = jest.fn();
 jest.mock('../../api/client', () => ({
-  api: { get: (...a) => mockApiGet(...a) },
+  api: { get: (...a) => mockApiGet(...a), post: (...a) => mockApiPost(...a) },
   configureAuthBridge: jest.fn(),
 }));
 
@@ -33,6 +35,7 @@ const render = () => create(<AuthProvider><Probe /></AuthProvider>);
 beforeEach(() => {
   mockStore.clear();
   mockApiGet.mockReset();
+  mockApiPost.mockReset();
 });
 
 describe('AuthContext', () => {
@@ -102,6 +105,62 @@ describe('AuthContext', () => {
     expect(ctx.status).toBe('signedOut');
     expect(ctx.user).toBeNull();
     expect(mockStore.get('mediway.session.v1')).toBeUndefined();
+    await act(async () => tree.unmount());
+  });
+
+  it('bootstrap com access token vencido + refresh token válido -> renova e segue signedIn', async () => {
+    mockStore.set(
+      'mediway.session.v1',
+      JSON.stringify({
+        accessToken: 'jwt-velho',
+        refreshToken: 'rt-valido',
+        expiresAt: Date.now() - 3600_000,
+        roles: ['PACIENTE'],
+      }),
+    );
+    mockApiPost.mockResolvedValue({ data: { accessToken: 'jwt-novo', expiresIn: 172800 } });
+    mockApiGet.mockResolvedValue({
+      data: {
+        patientId: 'p-4',
+        personalInfo: { name: 'Carla', roles: ['PACIENTE'] },
+        medicalInfo: { statusPatient: 'ESTAVEL' },
+      },
+    });
+
+    let tree;
+    await act(async () => {
+      tree = render();
+    });
+
+    expect(mockApiPost).toHaveBeenCalledWith(
+      '/auth/refresh',
+      { refreshToken: 'rt-valido' },
+      { auth: 'none' },
+    );
+    expect(ctx.status).toBe('signedIn');
+    expect(ctx.user).toMatchObject({ id: 'p-4' });
+    await act(async () => tree.unmount());
+  });
+
+  it('bootstrap com access token vencido e refresh inválido -> signedOut(expired)', async () => {
+    mockStore.set(
+      'mediway.session.v1',
+      JSON.stringify({
+        accessToken: 'jwt-velho',
+        refreshToken: 'rt-morto',
+        expiresAt: Date.now() - 3600_000,
+        roles: ['PACIENTE'],
+      }),
+    );
+    mockApiPost.mockRejectedValue(new ApiError({ status: 401 }));
+
+    let tree;
+    await act(async () => {
+      tree = render();
+    });
+
+    expect(ctx.status).toBe('signedOut');
+    expect(ctx.reason).toBe('expired');
     await act(async () => tree.unmount());
   });
 });

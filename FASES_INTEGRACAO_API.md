@@ -28,6 +28,15 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | 5 | Vacinas (leitura) | ✅ Concluída (2026-09-10) |
 | 6 | Ajuste de escopo / lacunas | ✅ Concluída (2026-09-10) |
 | 7 | Robustez, QA e fechamento | ✅ Concluída (2026-09-10) |
+| 8 | Revisão pós-backend (rodada de correções) | ✅ Concluída (2026-09-11) |
+
+> **Rodada de correções do backend (2026-09-10)** — ver [`../LACUNAS_BACKEND.md`](../LACUNAS_BACKEND.md),
+> [`../MUDANCAS_PARA_FRONTEND.md`](../MUDANCAS_PARA_FRONTEND.md) e o roteiro
+> [`../REVISAO_POS_BACKEND.md`](../REVISAO_POS_BACKEND.md) §3. A **Fase 8** adota: refresh token,
+> `PUT /auth/change-password`, `patientId` (fim do fallback `patientI`), vacina `404` (fim do hack `500`),
+> `medicine-box` `error` codes, e reconstrói **Notificações** e **Tratamentos** (somente leitura) contra os
+> módulos novos. Confirmado: paciente segue **read-only** em consulta/exame/vacina — decisão de produto, não
+> pendência de backend.
 
 ---
 
@@ -58,13 +67,17 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | `ConsultationAndExmStatus` | `MARCADO`, `REALIZADO`, `CANCELADO`, `REMARCADO`, `INDEFERIDO`, `NAO_COMPARECEU` |
 | `VaccineStatus` | `APLICADA`, `AGENDADA`, `ATRASADA` |
 | `VaccineDoseType` | `UNICA_DOSE`, `PRIMEIRA_DOSE`, `SEGUNDA_DOSE`, `REFORCO` |
+| `NotificationType` | `GERAL`, `CONSULTA`, `EXAME`, `VACINA`, `MEDICACAO`, `TRATAMENTO` |
+| `TreatmentStatus` | `ATIVO`, `CONCLUIDO`, `SUSPENSO` |
 
-### 1.2 Peculiaridades a tratar (detalhe em `../PLANO_INTEGRACAO_API.md` §1.6)
+### 1.2 Peculiaridades do backend (corrigidas na rodada de 2026-09-10 — **adotadas na Fase 8**)
 
-- **B1** — `GET /patients/me` devolve o ID em `patientI` (typo), não `patientId`.
-- **B2** — `GET/PUT/DELETE /vaccine/{id}` retornam **500** (não 404) quando o ID não existe.
-- **B4** — `POST /medicine-box/register/{patientId}` retorna **409** se o paciente já tem caixa **ou** se `numeroSerie` está duplicado (diferenciar pela `message`).
-- Sem **refresh token**: `accessToken` expira em 48 h (`expiresIn: 172800`) → em `401`, deslogar e voltar ao login.
+- **B1** — `patientI` (typo) → `patientId`. `patientApi` lê `dto.patientId ?? dto.patientI` (fallback legado por 1 ciclo).
+- **B2** — vacinas: `500` → `404` para ID inexistente. `vaccineApi.getById` trata só `404` como `null`; `500` propaga.
+- **B4** — `POST /medicine-box/register`: `409` com `error` = `BOX_ALREADY_EXISTS` / `SERIAL_DUPLICATED`.
+  `medicineBoxConflictCode(err)` lê `err.error` (fallback pela mensagem).
+- **Refresh token** — `login` devolve `refreshToken` (30 dias); `client.js` no `401` chama `POST /auth/refresh`
+  e reexecuta a requisição; `signOut('expired')` só se o refresh falhar.
 
 ---
 
@@ -78,7 +91,12 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | A2 | `POST /auth/login` | sim | `{ email*, password* }` → `{ accessToken, expiresIn, roles[] }` | `LoginScreen`, bootstrap de sessão | 1 | `[x]` |
 | A3 | `POST /auth/request-reset` | sim (5/h) | `{ identifier* }` (e-mail ou telefone) → `200` sem corpo | `ForgotPasswordScreen`, `ValidateCodeScreen` (reenvio); `ChangePasswordScreen` na Fase 6 (L5) | 1 / 6 | `[x]` |
 | A4 | `POST /auth/validate-code` | sim (5/min) | `{ code* }` (6 dígitos) → `{ tokenTemp }` (`SCOPE_RESET`) | `ValidateCodeScreen` | 1 | `[x]` |
-| A5 | `POST /auth/reset-password` | `SCOPE_RESET` | `{ newPassword*(≥8) }` (Bearer = `tokenTemp`) → `200` sem corpo | `NewPasswordScreen` (pós-código) | 1 / 6 | `[x]` |
+| A5 | `POST /auth/reset-password` | `SCOPE_RESET` | `{ newPassword*(≥8) }` (Bearer = `tokenTemp`) → `200` sem corpo | `NewPasswordScreen` (pós-código) | 1 | `[x]` |
+| A6 | `PUT /auth/change-password` | `SCOPE_PACIENTE` (autenticado) | `{ currentPassword*, newPassword*(≥8) }` → `204` (`422` = senha atual incorreta) | `ChangePasswordScreen` (troca de senha logado, sem e-mail) | 8 | `[x]` |
+| A7 | `POST /auth/refresh` | sim | `{ refreshToken* }` → `{ accessToken, expiresIn }` | interceptor 401 / bootstrap / retorno ao foreground | 8 | `[x]` |
+
+> `POST /auth/login` devolve **`refreshToken`** (JWT 30 dias, scope `REFRESH`) além do `accessToken`.
+> `session.js` guarda os dois; no `401` o cliente renova via A7 e só desloga se o refresh falhar.
 
 ### 2.2 PACIENTE — Perfil `/api/v1/patients`
 
@@ -131,15 +149,40 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 
 `MedicineBoxResponseDTO`: `{ medicineBoxId, nome, numeroSerie, externalId, gavetas:[{ nome, medicamentos:[MedicationResponseDTO] }] }`.
 > **1 caixa por paciente.** `numeroSerie` é digitado pelo usuário (não há "detecção via rede"). `externalId` (UUID) é o único ID gerado pela API.
+> **B4 corrigido** (Fase 8): o `409` de X2 traz `error` = `BOX_ALREADY_EXISTS` / `SERIAL_DUPLICATED` —
+> `medicineBoxConflictCode(err)` discrimina por isso em vez de *string matching* na `message`.
 
 ### 2.7 PACIENTE — Vacinas `/api/v1/vaccine` (somente leitura)
 
 | # | Método / Rota | Acesso | (→ resposta) | Consumido em | Fase | Status |
 |---|---|---|---|---|---|---|
 | V1 | `GET /vaccine/me` | `SCOPE_PACIENTE` | → `VaccineResponseDTO[]` | `useVaccines` → `VaccineHistoryScreen` | 5 | `[x]` |
-| V2 | `GET /vaccine/{vaccineId}` | `SCOPE_PACIENTE` | → `VaccineResponseDTO` (500/404 → `null`, B2) | `vaccineApi.getById` (sem tela dedicada) | 5 | `[x]` |
+| V2 | `GET /vaccine/{vaccineId}` | `SCOPE_PACIENTE` | → `VaccineResponseDTO` (`404` → `null`; B2 corrigido) | `vaccineApi.getById` (sem tela dedicada) | 5 / 8 | `[x]` |
 
 `VaccineResponseDTO`: `{ vaccineId, nome, tipoDose, dataVacinou, lote, dataFabricacao, proximaDose, status, patientId }`.
+
+### 2.8 PACIENTE — Notificações `/api/v1/notifications` (novo)
+
+| # | Método / Rota | Acesso | Corpo / Query (→ resposta) | Consumido em | Fase | Status |
+|---|---|---|---|---|---|---|
+| NT1 | `GET /notifications/me?unreadOnly=` | autenticado (qualquer papel) | → `[{ id, title, message, type, read, createdAt }]` | `NotificationScreen` | 8 | `[x]` |
+| NT2 | `PATCH /notifications/{id}/read` | dono | → `204` | `NotificationScreen` | 8 | `[x]` |
+| NT3 | `DELETE /notifications/{id}` | dono / ADMIN | → `204` | `NotificationScreen` | 8 | `[x]` |
+
+`NotificationType`: `GERAL`, `CONSULTA`, `EXAME`, `VACINA`, `MEDICACAO`, `TRATAMENTO`. Inbox por polling
+(`GET /me`), sem push nesta rodada. `POST /notifications/user/{userId}` é de ADMIN/MÉDICO/CUIDADOR — não
+usado aqui.
+
+### 2.9 PACIENTE — Tratamentos `/api/v1/treatment` (novo, somente leitura)
+
+| # | Método / Rota | Acesso | (→ resposta) | Consumido em | Fase | Status |
+|---|---|---|---|---|---|---|
+| T1 | `GET /treatment/me` | `SCOPE_PACIENTE` | → `[TreatmentResponseDTO]` | `TreatmentListScreen` | 8 | `[x]` |
+| T2 | `GET /treatment/{treatmentId}` | ADMIN/PACIENTE/CUIDADOR/MÉDICO | → `TreatmentResponseDTO` | `treatmentApi.getById` (sem tela dedicada) | 8 | `[x]` |
+
+`TreatmentResponseDTO`: `{ treatmentId, patientUserId, nome, descricao, dataInicio, dataFim, status, createdAt }`.
+`TreatmentStatus`: `ATIVO`, `CONCLUIDO`, `SUSPENSO`. Criar/editar/excluir é ADMIN/MÉDICO/CUIDADOR — o paciente
+só lê.
 
 ---
 
@@ -157,7 +200,11 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 | `/medicine-box` | `GET /patient/{patientId}`, `DELETE /admin/{userId}` | exige ADMIN/MÉDICO/CUIDADOR |
 | `/vaccine` | `POST /register/{patientId}`, `PUT /{id}/status`, `DELETE /{id}`, `GET /patient/{patientId}`, `GET /by-status` | escrita exige ADMIN/CUIDADOR/MÉDICO (lacuna L1) |
 
-**Consequências de UI (ver fases 3, 5 e 6):** telas/modais de **agendar/editar consulta**, **agendar/editar exame** e **adicionar/editar/excluir vacina** ficam **somente leitura**. `CaregiverListScreen`, `TreatmentListScreen`, `NotificationScreen`, `BloodTypeScreen` e o login social foram **removidos** (sem backend, só tinham mock) — a serem reconstruídos quando as rotas existirem (§14).
+**Consequências de UI (ver fases 3, 5, 6 e 8):** telas/modais de **agendar/editar consulta**,
+**agendar/editar exame** e **adicionar/editar/excluir vacina** ficam **somente leitura** —
+confirmado como **decisão de produto definitiva** (não é mais pendência de backend). `CaregiverListScreen`
+e `BloodTypeScreen` e o login social seguem **removidos** (sem backend). `TreatmentListScreen` e
+`NotificationScreen` foram **reconstruídas na Fase 8** contra os módulos reais (§2.8/§2.9).
 
 ---
 
@@ -168,9 +215,10 @@ Convenção de status nas tabelas: `[ ]` não iniciado · `[~]` em andamento · 
 **Fase 3 – Consultas/Exames:** `[x]` C1 `[x]` C2 `[x]` E1 `[x]` E2
 **Fase 4 – Medicações/Caixa:** `[x]` M1 `[x]` M2 `[x]` M3 `[x]` M4 `[x]` M5 `[x]` X1 `[x]` X2 `[x]` X3 `[x]` X4 `[x]` X5
 **Fase 5 – Vacinas:** `[x]` V1 `[x]` V2
-**Fase 6 – Ajuste de escopo:** ✅ flags em `config/features.js`; troca de senha logado reusa A3→A4→A5 (`ChangePasswordScreen`)
+**Fase 6 – Ajuste de escopo:** ✅ flags em `config/features.js`; troca de senha logado reusa A3→A4→A5 (`ChangePasswordScreen`) — **substituído na Fase 8** por A6
+**Fase 8 – Revisão pós-backend:** `[x]` A6 `[x]` A7 `[x]` NT1 `[x]` NT2 `[x]` NT3 `[x]` T1 `[x]` T2 · `patientId` (B1) · vacina `404` (B2) · `medicine-box` `error` codes (B4)
 
-Total: **5 globais (A) + 19 do paciente (P/C/E/M/X/V) = 24 endpoints** integrados ao final da Fase 5.
+Total: **7 globais (A) + 19 do paciente (P/C/E/M/X/V) + 5 da Fase 8 (NT/T) = 31 rotas** integradas.
 
 ---
 
@@ -432,7 +480,51 @@ Fora de `src/`: `App.js` reescrito (SafeAreaProvider → QueryClientProvider →
 
 ---
 
-## 13. Dependências entre fases
+## 13. Fase 8 — Revisão pós-backend
+
+**Status: ✅ Concluída (2026-09-11)** · commit na branch `feat/revisao-pos-backend`
+
+**Objetivo:** adotar a rodada de correções do backend (ver [`../LACUNAS_BACKEND.md`](../LACUNAS_BACKEND.md),
+[`../MUDANCAS_PARA_FRONTEND.md`](../MUDANCAS_PARA_FRONTEND.md) e [`../REVISAO_POS_BACKEND.md`](../REVISAO_POS_BACKEND.md) §3).
+
+**Endpoints:** A6 · A7 · NT1–NT3 · T1–T2 · V2 (limpeza B2) · X2 (B4)
+
+**Tarefas**
+- [x] **Refresh token (P.1)** — `session.js` guarda `refreshToken`; `authApi.refresh` (`POST /auth/refresh`);
+  `client.js` no `401` chama o refresh (uma tentativa compartilhada) e **reexecuta a requisição** — só desloga
+  se o refresh falhar; `AuthContext.tryRefresh` cobre bootstrap com token vencido e retorno ao foreground.
+- [x] **Trocar senha logado (P.2)** — `authApi.changePassword` (`PUT /auth/change-password`);
+  `ChangePasswordScreen` reescrito: senha atual + nova, sem e-mail/código; `422` → "senha atual incorreta".
+- [x] **`patientId` (P.3)** — `patientApi` passa a ler `dto.patientId ?? dto.patientI` (B1 corrigido).
+- [x] **Vacinas `404` (P.4)** — `vaccineApi.getById` trata só `404` como `null`; `500` volta a propagar (B2 corrigido).
+- [x] **`medicine-box` `error` (P.5)** — `medicineBoxConflictCode(err)` lê `err.error`
+  (`BOX_ALREADY_EXISTS` / `SERIAL_DUPLICATED`); `AddCEMModal` usa isso em vez de *string matching* na `message` (B4 corrigido).
+- [x] **Notificações (P.6)** — `notificationApi` (NT1–NT3) + `useNotifications` / `useMarkNotificationRead` /
+  `useRemoveNotification`; `NotificationScreen` reconstruída: inbox real, filtro "só não lidas", marcar como
+  lida, excluir, pull-to-refresh. Item do Drawer restaurado.
+- [x] **Tratamentos (P.7)** — `treatmentApi` (T1–T2, somente leitura) + `useTreatments`;
+  `TreatmentListScreen` reconstruída contra o `TreatmentResponseDTO` real (badge de status). Item do Drawer
+  restaurado. Criar/editar/excluir continua ADMIN/MÉDICO/CUIDADOR.
+- [x] **Confirmado (P.8)** — `consultationApi` e `examApi` seguem só com `listMine`/`getById`; nenhum
+  `POST/PUT/DELETE` foi adicionado. Read-only em consulta/exame/vacina é **decisão de produto definitiva**
+  (#9 de `LACUNAS_BACKEND.md`), não pendência.
+- [x] **Não fazer (P.9)** — `imageUrl`/`bloodType` não vieram nesta rodada: `PatientCard`/header seguem com
+  iniciais, `BloodTypeScreen` segue removida, login social segue removido.
+- [x] Enums novos (`NotificationType`, `TreatmentStatus`) em `lib/enums.js`; `treatmentStatusColor` em `lib/statusColors.js`.
+- [x] Testes: `authApi` (refresh, changePassword), `AuthContext` (refresh no bootstrap: sucesso e falha),
+  `patientApi` (patientId + fallback), `vaccineApi` (500 propaga), `medicineBoxApi` (`medicineBoxConflictCode`),
+  `notificationApi` (novo), `treatmentApi` (novo), `lib/enums`, `lib/statusColors`.
+
+**Critérios de aceite**
+- [x] `401` renova via refresh token e reexecuta a chamada; só desloga se o refresh falhar (sem crash).
+- [x] `ChangePasswordScreen` não depende mais de e-mail/código.
+- [x] Notificações e Tratamentos leem da API real e revalidam (notificações: marcar lida/excluir).
+- [x] `npx jest --ci` verde (**17 suites / 115 testes**) e `npx expo export --platform android` com exit 0.
+- [ ] Merge em `main` + push — **a critério do usuário** (revisão pendente antes do merge).
+
+---
+
+## 14. Dependências entre fases
 
 ```
 Fase 0 (fundação)
@@ -440,21 +532,29 @@ Fase 0 (fundação)
                             ├─> Fase 3 (consultas/exames + dashboard)
                             ├─> Fase 4 (medicações/caixa)
                             └─> Fase 5 (vacinas)
-Fases 3/4/5 ──> Fase 6 (ajuste de escopo) ──> Fase 7 (robustez/QA)
+Fases 3/4/5 ──> Fase 6 (ajuste de escopo) ──> Fase 7 (robustez/QA) ──> Fase 8 (revisão pós-backend)
 ```
 - Fases 3, 4 e 5 são independentes entre si — podem ser paralelizadas após a Fase 2.
 - Fase 6 pode começar em paralelo (é só ocultar/flag), mas fecha depois das telas ativas.
+- Fase 8 depende da rodada de correções do backend (2026-09-10) — não podia começar antes dela.
 
 ---
 
-## 14. Pendências para o time de backend (rastrear como issues)
+## 15. Pendências para o time de backend (rastrear como issues)
 
-1. Corrigir `patientI` → `patientId` em `PatientResponseInfosDTO` (B1).
-2. `GET/PUT/DELETE /vaccine/{id}` devolver `404` em vez de `500` (B2/B3).
-3. Avaliar liberar para `SCOPE_PACIENTE`: `POST /vaccine/register`, `POST /consultation/schedule`, `POST /exam/schedule` (ou confirmar que paciente é read-only nesses domínios).
-4. `PUT /medications/{id}` para edição completa de medicação (hoje só `PATCH status`).
-5. Endpoint de troca de senha para usuário autenticado (ex.: `PUT /auth/change-password`).
-6. `GET /caregiver/me` (ou incluir cuidadores em `GET /patients/me`).
-7. Módulo de **tratamentos** (não existe).
-8. Campo **tipo sanguíneo** em `patients`.
-9. Refresh token / renovação de sessão (hoje expira em 48 h sem renovação).
+**Todas as pendências abaixo foram entregues pelo backend na rodada de 2026-09-10** — ver
+[`../LACUNAS_BACKEND.md`](../LACUNAS_BACKEND.md) §0 e [`../MUDANCAS_PARA_FRONTEND.md`](../MUDANCAS_PARA_FRONTEND.md).
+Adotadas no app na **Fase 8**, exceto onde marcado.
+
+1. ✅ `patientI` → `patientId` em `PatientResponseInfosDTO` (B1).
+2. ✅ `GET/PUT/DELETE /vaccine/{id}` devolvem `404` em vez de `500` (B2/B3).
+3. ✅ **Decidido, não implementado**: paciente segue **read-only** em consulta/exame/vacina — decisão de
+   produto definitiva (#9 de `LACUNAS_BACKEND.md`), não um `POST` que vai chegar depois.
+4. ✅ `PUT /medications/{id}` (edição completa) já existe na API — a **adoção no app do paciente não entrou
+   nesta rodada** (o app já tem `PATCH /status` e `DELETE`; considerar numa fase futura se fizer sentido).
+5. ✅ `PUT /auth/change-password` (troca de senha para usuário autenticado).
+6. ✅ `GET /caregiver/me` — não é usado pelo app do paciente (é do `mediway-cuidador-app`).
+7. ✅ Módulo de **tratamentos** (`/api/v1/treatment`) — reconstruído somente leitura (T1/T2).
+8. ⬜ **Campo tipo sanguíneo em `patients`** — **não** implementado nesta rodada (fora do escopo, #13 de
+   `LACUNAS_BACKEND.md`). `BloodTypeScreen` segue removida.
+9. ✅ Refresh token / `POST /auth/refresh` (`refreshToken` de 30 dias no `login`).

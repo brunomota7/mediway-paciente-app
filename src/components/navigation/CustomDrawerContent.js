@@ -40,6 +40,18 @@ const CustomDrawerContent = (props) => {
         onPress={() => props.navigation.navigate('Vacinas')}
       />
       <DrawerItem
+        label="Notificações"
+        icon={() => <MaterialIcons name="notifications" size={24} color="#2e7d32" />}
+        labelStyle={{ color: '#2e7d32' }}
+        onPress={() => props.navigation.navigate('Notificações')}
+      />
+      <DrawerItem
+        label="Tratamentos"
+        icon={() => <MaterialIcons name="healing" size={24} color="#2e7d32" />}
+        labelStyle={{ color: '#2e7d32' }}
+        onPress={() => props.navigation.navigate('Tratamentos')}
+      />
+      <DrawerItem
         label="Sair"
         icon={() => <MaterialIcons name="logout" size={24} color="#2e7d32" />}
         labelStyle={{ color: '#2e7d32' }}

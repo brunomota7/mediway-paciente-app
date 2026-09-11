@@ -1,9 +1,9 @@
 // 📁 src/navigation/AppStack.js
 //
 // Fluxo autenticado, renderizado quando `status === 'signedIn'`.
-// Só contém telas que consomem dados reais da API. As features sem backend
-// (Cuidadores, Tratamentos, Notificações, Tipo Sanguíneo) foram removidas —
-// ver FASES_INTEGRACAO_API.md §11 e §14 (pendências de backend).
+// As features sem backend (Cuidadores, Tipo Sanguíneo) seguem removidas —
+// ver FASES_INTEGRACAO_API.md §11 e §14. Notificações e Tratamentos voltaram
+// contra os módulos reais na revisão pós-backend (REVISAO_POS_BACKEND.md §3).
 
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -15,6 +15,8 @@ import HomeScreen from '../features/home/screens/HomeScreen';
 import MedicationListScreen from '../features/medications/screens/MedicationListScreen';
 import UserProfileScreen from '../features/profile/screens/UserProfileScreen';
 import VaccineHistoryScreen from '../features/vaccines/screens/VaccineHistoryScreen';
+import NotificationScreen from '../features/notifications/screens/NotificationScreen';
+import TreatmentListScreen from '../features/treatments/screens/TreatmentListScreen';
 
 import CEMListScreen from '../features/cem/screens/CEMListScreen';
 import ViewCEMMedicationsScreen from '../features/cem/screens/ViewCEMMedicationsScreen';
@@ -40,6 +42,8 @@ function HomeDrawer() {
       <Drawer.Screen name="Perfil" component={UserProfileScreen} />
       <Drawer.Screen name="Troca de Senha" component={ChangePasswordScreen} />
       <Drawer.Screen name="Vacinas" component={VaccineHistoryScreen} />
+      <Drawer.Screen name="Notificações" component={NotificationScreen} />
+      <Drawer.Screen name="Tratamentos" component={TreatmentListScreen} />
     </Drawer.Navigator>
   );
 }

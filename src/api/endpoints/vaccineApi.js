@@ -1,12 +1,13 @@
 // 📁 src/api/endpoints/vaccineApi.js
 //
-// Vacinas do paciente (/api/v1/vaccine) — SOMENTE LEITURA (L1).
+// Vacinas do paciente (/api/v1/vaccine) — SOMENTE LEITURA por design (#9).
 //   V1  GET /vaccine/me        -> VaccineResponseDTO[]
-//   V2  GET /vaccine/{id}      -> VaccineResponseDTO
+//   V2  GET /vaccine/{id}      -> VaccineResponseDTO (404 -> null)
 // Registrar/editar/excluir exigem ADMIN/CUIDADOR/MÉDICO e não existem aqui.
 //
-// B2: quando o id não existe, a API hoje devolve 500 (não 404) — tratamos
-// 500/404 no getById como "não encontrada" (null).
+// B2 (corrigido): o id inexistente agora devolve 404 (antes vinha 500). `500`
+// volta a significar erro de servidor de verdade — não é mais tratado como
+// "não encontrada".
 
 import { api } from '../client';
 import { ApiError } from '../httpError';
@@ -42,13 +43,13 @@ export const vaccineApi = {
     return Array.isArray(data) ? data.map(vaccineFromApi) : [];
   },
 
-  /** Devolve `null` se a vacina não existe (500 ou 404 — ver B2). */
+  /** Devolve `null` se a vacina não existe (404 — B2 corrigido). */
   getById: async (id) => {
     try {
       const { data } = await api.get(`/vaccine/${id}`);
       return vaccineFromApi(data);
     } catch (err) {
-      if (err instanceof ApiError && (err.isServer || err.isNotFound)) return null;
+      if (err instanceof ApiError && err.isNotFound) return null;
       throw err;
     }
   },

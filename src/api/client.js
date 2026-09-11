@@ -6,13 +6,15 @@
 //
 // Como escolher a autenticação por requisição (campo extra no config do axios):
 //   { auth: 'bearer' }  -> padrão: usa o accessToken de sessão (SCOPE_PACIENTE)
+//   { auth: 'bearer', accessToken } -> força um token específico
 //   { auth: 'none' }     -> rota pública (/auth/register, /auth/login, ...)
 //   { auth: 'reset', resetToken } -> fluxo de redefinição de senha (SCOPE_RESET)
 //
 // Robustez:
 //   - timeout padrão (REQUEST_TIMEOUT_MS)
 //   - 1 retry automático para GET em falha de rede/timeout/5xx
-//   - 401 em chamada autenticada -> logout global (motivo 'expired')
+//   - 401 em chamada autenticada -> tenta `POST /auth/refresh` e reexecuta a
+//     requisição; só desloga globalmente (motivo 'expired') se o refresh falhar
 //   - sinaliza `networkStatus` (faixa "sem conexão")
 
 import axios from 'axios';
@@ -22,11 +24,13 @@ import { setServerUnreachable } from './networkStatus';
 
 let getAccessToken = () => null;
 let handleUnauthorized = () => {};
+let refreshSession = async () => null; // -> novo accessToken | null
 
 /** Registrado pelo AuthProvider. */
-export function configureAuthBridge({ getToken, onUnauthorized } = {}) {
+export function configureAuthBridge({ getToken, onUnauthorized, onRefresh } = {}) {
   if (typeof getToken === 'function') getAccessToken = getToken;
   if (typeof onUnauthorized === 'function') handleUnauthorized = onUnauthorized;
+  if (typeof onRefresh === 'function') refreshSession = onRefresh;
 }
 
 export const api = axios.create({
@@ -50,7 +54,7 @@ api.interceptors.request.use((config) => {
     return config;
   }
 
-  const token = getAccessToken();
+  const token = config.accessToken || getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   else if (config.headers) delete config.headers.Authorization;
   return config;
@@ -62,6 +66,23 @@ function shouldRetry(apiError, config) {
   if (!config || String(config.method || 'get').toLowerCase() !== 'get') return false;
   if ((config.__retryCount ?? 0) >= MAX_GET_RETRIES) return false;
   return apiError.isNetwork || apiError.isTimeout || apiError.isServer;
+}
+
+// Uma única tentativa de refresh em voo, compartilhada por todas as requisições
+// que tomaram 401 ao mesmo tempo.
+let inFlightRefresh = null;
+function runRefreshOnce() {
+  if (!inFlightRefresh) {
+    inFlightRefresh = Promise.resolve()
+      .then(() => refreshSession())
+      .catch(() => null)
+      .finally(() => {
+        setTimeout(() => {
+          inFlightRefresh = null;
+        }, 0);
+      });
+  }
+  return inFlightRefresh;
 }
 
 api.interceptors.response.use(
@@ -84,8 +105,14 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    // 401 numa chamada autenticada -> encerra a sessão globalmente.
-    if (apiError.isUnauthorized && mode === 'bearer') {
+    // 401 numa chamada autenticada -> tenta renovar via refresh token antes de deslogar.
+    if (apiError.isUnauthorized && mode === 'bearer' && config && !config.__didAuthRefresh) {
+      const newToken = await runRefreshOnce();
+      if (newToken) {
+        config.__didAuthRefresh = true;
+        config.accessToken = newToken;
+        return api(config);
+      }
       try {
         handleUnauthorized('expired');
       } catch (_) {

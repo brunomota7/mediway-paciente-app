@@ -15,13 +15,19 @@ export const authApi = {
       { auth: 'none' },
     ),
 
-  /** A2 — POST /auth/login. Devolve { accessToken, expiresIn, roles }. */
+  /** A2 — POST /auth/login. Devolve { accessToken, refreshToken, expiresIn, roles }. */
   login: async ({ email, password }) => {
     const { data } = await api.post(
       '/auth/login',
       { email, password },
       { auth: 'none' },
     );
+    return data;
+  },
+
+  /** A7 — POST /auth/refresh (rota pública). Troca o refreshToken por um novo accessToken. */
+  refresh: async (refreshToken) => {
+    const { data } = await api.post('/auth/refresh', { refreshToken }, { auth: 'none' });
     return data;
   },
 
@@ -46,6 +52,14 @@ export const authApi = {
       { newPassword },
       { auth: 'reset', resetToken },
     ),
+
+  /**
+   * A6 — PUT /auth/change-password. Troca a senha do usuário logado (Bearer
+   * normal) usando a senha atual como prova de identidade — sem e-mail/código.
+   * Erros: 401 (sem token), 422 (senha atual incorreta), 400 (nova senha < 8).
+   */
+  changePassword: ({ currentPassword, newPassword }) =>
+    api.put('/auth/change-password', { currentPassword, newPassword }),
 };
 
 export default authApi;

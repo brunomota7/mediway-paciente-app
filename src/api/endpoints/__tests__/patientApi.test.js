@@ -12,7 +12,8 @@ jest.mock('../../client', () => ({
 const { patientApi, patientFromApi } = require('../patientApi');
 
 const DTO = {
-  patientI: 'uuid-123', // B1: typo do backend
+  patientId: 'uuid-123', // B1 corrigido: agora vem `patientId`
+  patientI: 'uuid-123', // chave legada, mantida 1 ciclo
   personalInfo: { name: 'Ana Lima', dateOfBirth: '1990-05-20', age: 36, gender: 'FEMININO', roles: ['PACIENTE'] },
   contactInfo: { email: 'ana@x.com', number: '11999998888' },
   medicalInfo: { conditionPatient: 'Hipertensão', statusPatient: 'EM_ACOMPANHAMENTO' },
@@ -25,7 +26,7 @@ beforeEach(() => {
 });
 
 describe('patientFromApi', () => {
-  it('achata o DTO e lê o id de patientI', () => {
+  it('achata o DTO e prefere patientId (fallback patientI)', () => {
     const p = patientFromApi(DTO);
     expect(p).toMatchObject({
       id: 'uuid-123',
@@ -51,6 +52,10 @@ describe('patientFromApi', () => {
     expect(p.id).toBeNull();
     expect(p.roles).toEqual([]);
     expect(p.hasMedicalInfo).toBe(false);
+  });
+
+  it('usa a chave legada patientI quando patientId ainda não veio', () => {
+    expect(patientFromApi({ patientI: 'legacy-id' }).id).toBe('legacy-id');
   });
 });
 

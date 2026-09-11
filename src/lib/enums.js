@@ -86,6 +86,21 @@ export const VaccineDoseType = makeEnum([
   ['REFORCO', 'Reforço'],
 ]);
 
+export const NotificationType = makeEnum([
+  ['GERAL', 'Geral'],
+  ['CONSULTA', 'Consulta'],
+  ['EXAME', 'Exame'],
+  ['VACINA', 'Vacina'],
+  ['MEDICACAO', 'Medicação'],
+  ['TRATAMENTO', 'Tratamento'],
+]);
+
+export const TreatmentStatus = makeEnum([
+  ['ATIVO', 'Ativo'],
+  ['CONCLUIDO', 'Concluído'],
+  ['SUSPENSO', 'Suspenso'],
+]);
+
 export default {
   Gender,
   ConditionStatusPatient,
@@ -95,4 +110,6 @@ export default {
   ConsultationExamStatus,
   VaccineStatus,
   VaccineDoseType,
+  NotificationType,
+  TreatmentStatus,
 };

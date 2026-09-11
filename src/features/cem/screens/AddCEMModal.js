@@ -19,10 +19,15 @@ import {
 import medStyles from '../../medications/styles/AddMedicationModalStyles';
 import MedicationForm from '../../medications/components/MedicationForm';
 import { useRegisterMedicineBox } from '../../../hooks/useMedicineBox';
+import {
+  MEDICINE_BOX_CONFLICT,
+  medicineBoxConflictCode,
+} from '../../../api/endpoints/medicineBoxApi';
 
 function describeConflict(err) {
-  const msg = String(err?.message || '').toLowerCase();
-  if (msg.includes('serie') || msg.includes('série')) {
+  // B4 corrigido: o 409 traz `error` estável no corpo (BOX_ALREADY_EXISTS | SERIAL_DUPLICATED).
+  const code = medicineBoxConflictCode(err);
+  if (code === MEDICINE_BOX_CONFLICT.SERIAL_DUPLICATED) {
     return 'Esse número de série já está em uso em outra caixa.';
   }
   return 'Você já possui uma caixa cadastrada.';

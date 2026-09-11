@@ -62,14 +62,14 @@ describe('vaccineApi', () => {
     expect(v.id).toBe(9);
   });
 
-  it('getById: 500 -> null (bug B2)', async () => {
-    mockGet.mockRejectedValue(new ApiError({ status: 500 }));
+  it('getById: 404 -> null (B2 corrigido)', async () => {
+    mockGet.mockRejectedValue(new ApiError({ status: 404 }));
     expect(await vaccineApi.getById(999)).toBeNull();
   });
 
-  it('getById: 404 -> null', async () => {
-    mockGet.mockRejectedValue(new ApiError({ status: 404 }));
-    expect(await vaccineApi.getById(999)).toBeNull();
+  it('getById: 500 agora propaga (não é mais tratado como "não encontrada")', async () => {
+    mockGet.mockRejectedValue(new ApiError({ status: 500 }));
+    await expect(vaccineApi.getById(999)).rejects.toBeInstanceOf(ApiError);
   });
 
   it('getById: erro de rede propaga', async () => {

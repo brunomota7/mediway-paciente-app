@@ -4,6 +4,8 @@ import {
   MedicationStatus,
   VaccineDoseType,
   WeekDay,
+  NotificationType,
+  TreatmentStatus,
 } from '../enums';
 
 describe('lib/enums', () => {
@@ -37,5 +39,12 @@ describe('lib/enums', () => {
     expect(ConsultationExamStatus.isValid('MARCADO')).toBe(true);
     expect(ConsultationExamStatus.isValid('marcado')).toBe(false);
     expect(ConsultationExamStatus.isValid('NADA')).toBe(false);
+  });
+
+  it('enums da revisão pós-backend (notificações e tratamentos)', () => {
+    expect(NotificationType.label('MEDICACAO')).toBe('Medicação');
+    expect(NotificationType.values).toHaveLength(6);
+    expect(TreatmentStatus.label('CONCLUIDO')).toBe('Concluído');
+    expect(TreatmentStatus.value('suspenso')).toBe('SUSPENSO');
   });
 });

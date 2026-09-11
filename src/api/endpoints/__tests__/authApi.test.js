@@ -1,11 +1,15 @@
 const mockPost = jest.fn();
-jest.mock('../../client', () => ({ api: { post: (...a) => mockPost(...a) } }));
+const mockPut = jest.fn();
+jest.mock('../../client', () => ({
+  api: { post: (...a) => mockPost(...a), put: (...a) => mockPut(...a) },
+}));
 
 const { authApi } = require('../authApi');
 
 beforeEach(() => {
   mockPost.mockReset();
   mockPost.mockResolvedValue({ data: {} });
+  mockPut.mockReset().mockResolvedValue({ data: undefined });
 });
 
 describe('authApi', () => {
@@ -29,17 +33,24 @@ describe('authApi', () => {
     );
   });
 
-  it('login: retorna o corpo da resposta', async () => {
+  it('login: retorna o corpo da resposta (incl. refreshToken)', async () => {
     mockPost.mockResolvedValue({
-      data: { accessToken: 'jwt', expiresIn: 172800, roles: ['PACIENTE'] },
+      data: { accessToken: 'jwt', refreshToken: 'rt', expiresIn: 172800, roles: ['PACIENTE'] },
     });
     const data = await authApi.login({ email: 'a@a.com', password: 'x' });
-    expect(data).toEqual({ accessToken: 'jwt', expiresIn: 172800, roles: ['PACIENTE'] });
+    expect(data).toEqual({ accessToken: 'jwt', refreshToken: 'rt', expiresIn: 172800, roles: ['PACIENTE'] });
     expect(mockPost).toHaveBeenCalledWith(
       '/auth/login',
       { email: 'a@a.com', password: 'x' },
       { auth: 'none' },
     );
+  });
+
+  it('refresh: POST /auth/refresh (rota pública) -> { accessToken, expiresIn }', async () => {
+    mockPost.mockResolvedValue({ data: { accessToken: 'novo', expiresIn: 172800 } });
+    const data = await authApi.refresh('rt');
+    expect(data).toEqual({ accessToken: 'novo', expiresIn: 172800 });
+    expect(mockPost).toHaveBeenCalledWith('/auth/refresh', { refreshToken: 'rt' }, { auth: 'none' });
   });
 
   it('requestReset: envia identifier em rota pública', async () => {
@@ -69,5 +80,13 @@ describe('authApi', () => {
       { newPassword: 'novasenha1' },
       { auth: 'reset', resetToken: 'temp-jwt' },
     );
+  });
+
+  it('changePassword: PUT /auth/change-password (Bearer normal)', async () => {
+    await authApi.changePassword({ currentPassword: 'atual123', newPassword: 'novasenha1' });
+    expect(mockPut).toHaveBeenCalledWith('/auth/change-password', {
+      currentPassword: 'atual123',
+      newPassword: 'novasenha1',
+    });
   });
 });

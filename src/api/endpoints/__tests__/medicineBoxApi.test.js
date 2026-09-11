@@ -11,7 +11,12 @@ jest.mock('../../client', () => ({
   },
 }));
 
-const { medicineBoxApi, medicineBoxFromApi } = require('../medicineBoxApi');
+const {
+  medicineBoxApi,
+  medicineBoxFromApi,
+  medicineBoxConflictCode,
+  MEDICINE_BOX_CONFLICT,
+} = require('../medicineBoxApi');
 const { ApiError } = require('../../httpError');
 
 const DTO = {
@@ -92,5 +97,28 @@ describe('medicineBoxApi', () => {
     expect(mockDelete).toHaveBeenCalledWith('/medicine-box/me/gaveta', {
       params: { gaveta: 'Gaveta 1' },
     });
+  });
+});
+
+describe('medicineBoxConflictCode (B4)', () => {
+  it('lê o campo `error` do 409', () => {
+    expect(
+      medicineBoxConflictCode(new ApiError({ status: 409, error: 'SERIAL_DUPLICATED' })),
+    ).toBe(MEDICINE_BOX_CONFLICT.SERIAL_DUPLICATED);
+    expect(
+      medicineBoxConflictCode(new ApiError({ status: 409, error: 'BOX_ALREADY_EXISTS' })),
+    ).toBe(MEDICINE_BOX_CONFLICT.BOX_ALREADY_EXISTS);
+  });
+  it('sem `error`, faz fallback pela mensagem', () => {
+    expect(
+      medicineBoxConflictCode(new ApiError({ status: 409, message: 'numero de série já usado' })),
+    ).toBe(MEDICINE_BOX_CONFLICT.SERIAL_DUPLICATED);
+    expect(
+      medicineBoxConflictCode(new ApiError({ status: 409, message: 'já possui caixa' })),
+    ).toBe(MEDICINE_BOX_CONFLICT.BOX_ALREADY_EXISTS);
+  });
+  it('não-conflito -> null', () => {
+    expect(medicineBoxConflictCode(new ApiError({ status: 500 }))).toBeNull();
+    expect(medicineBoxConflictCode(new Error('x'))).toBeNull();
   });
 });

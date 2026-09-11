@@ -9,14 +9,15 @@ import { api } from '../client';
 
 /**
  * Adapter `PatientResponseInfosDTO` -> modelo plano do app.
- * B1: o backend devolve o id em `patientI` (typo), não `patientId`.
+ * B1 (corrigido): o backend passou a devolver `patientId`; `patientI` (chave
+ * legada, typo) fica só como fallback defensivo por 1 ciclo.
  */
 export function patientFromApi(dto) {
   const personal = dto?.personalInfo ?? {};
   const contact = dto?.contactInfo ?? {};
   const medical = dto?.medicalInfo ?? {};
   return {
-    id: dto?.patientI ?? dto?.patientId ?? null,
+    id: dto?.patientId ?? dto?.patientI ?? null,
     name: personal.name ?? null,
     dateOfBirth: personal.dateOfBirth ?? null,
     age: personal.age ?? null,
